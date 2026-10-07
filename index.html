@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Mi Rutina de Entrenamiento - CHRIS</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        :root {
+            --color1: #EAF2F8;
+            --color2: #C9DCE8;
+            --color3: #8AA9C4;
+            --color4: #3E5C76;
+            --color5: #1D2D44;
+            --success: #28a745;
+            --warning: #ffc107;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background-color: var(--color1);
+            color: var(--color5);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+        
+        /* ===== MODAL CONTRASEÑA ===== */
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(29, 45, 68, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .password-modal.hidden {
+            display: none;
+        }
+        
+        .password-box {
+            background: white;
+            padding: 32px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 300px;
+        }
+        
+        .password-box h2 {
+            color: var(--color5);
+            margin-bottom: 8px;
+            font-size: 20px;
+        }
+        
+        .password-box p {
+            color: var(--color3);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .password-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 2px solid var(--color2);
+            border-radius: 8px;
+            font-size: 16px;
+            color: var(--color5);
+        }
+        
+        .password-box input:focus {
+            outline: none;
+            border-color: var(--color4);
+            box-shadow: 0 0 0 3px rgba(62, 92, 118, 0.1);
+        }
+        
+        .password-box button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
+            color: var(--color1);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .password-box button:active {
+            transform: scale(0.98);
+        }
+        
+        .password-error {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .password-error.show {
+            display: block;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
+            color: var(--color1);
+            padding: 20px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(29, 45, 68, 0.15);
+        }
+        
+        .header h1 {
+            font-size: clamp(20px, 6vw, 28px);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .header p {
+            font-size: clamp(12px, 3.5vw, 14px);
+            opacity: 0.95;
+            margin-bottom: 12px;
+        }
+        
+        .header-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .header-badge {
+            display: inline-block;
+            background: rgba(201, 220, 232, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        /* ===== TOOLBAR ===== */
+        .toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .search-box {
+            width: 100%;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--color2);
+            border-radius: 8px;
+            font-size: 16px;
+            color: var(--color5);
+            background-color: white;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--color4);
+            box-shadow: 0 0 0 3px rgba(62, 92, 118, 0.1);
+        }
+        
+        .btn-help {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
+            color: var(--color1);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn-help:active {
+            transform: scale(0.98);
+        }
+        
+        @media (min-width: 480px) {
+            .toolbar {
+                flex-direction: row;
+            }
+            
+            .search-box {
+                flex: 1;
+            }
+            
+            .btn-help {
+                width: auto;
+            }
+        }
+        
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--color2);
+            padding-bottom: 0;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .tab-btn {
+            padding: 12px 14px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color3);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .tab-btn.active {
+            color: var(--color5);
+            border-bottom-color: var(--color4);
+        }
+        
+        @media (min-width: 600px) {
+            .tabs {
+                gap: 8px;
+            }
+            
+            .tab-btn {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+        
+        /* ===== DÍA HEADER ===== */
+        .dia-header {
+            background: white;
+            border-left: 4px solid var(--color4);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .dia-header h2 {
+            font-size: clamp(16px, 5vw, 20px);
+            color: var(--color4);
+            margin-bottom: 4px;
+        }
+        
+        .dia-header p {
+            font-size: 13px;
+            color: var(--color3);
+        }
+        
+        /* ===== EJERCICIO CARD ===== */
+        .ejercicio-card {
+            background: white;
+            border: 1px solid var(--color2);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .ejercicio-card:active {
+            border-color: var(--color4);
+        }
+        
+        .ejercicio-card.expanded {
+            border-color: var(--color4);
+            box-shadow: 0 4px 12px rgba(62, 92, 118, 0.15);
+        }
+        
+        .ejercicio-header {
+            padding: 14px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .ejercicio-header:active {
+            background: var(--color1);
+        }
+        
+        .ejercicio-info h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color5);
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+        
+        .ejercicio-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            font-size: 11px;
+            background: var(--color1);
+            color: var(--color4);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--color2);
+        }
+        
+        .tag.tipo {
+            background: rgba(62, 92, 118, 0.1);
+            color: var(--color4);
+            border: none;
+            font-weight: 600;
+        }
+        
+        .ejercicio-toggle {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color1);
+            border-radius: 6px;
+            color: var(--color4);
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+        
+        .ejercicio-card.expanded .ejercicio-toggle {
+            background: var(--color4);
+            color: white;
+        }
+        
+        .ejercicio-content {
+            display: none;
+            border-top: 1px solid var(--color2);
+            padding: 16px 12px;
+            background: var(--color1);
+        }
+        
+        .ejercicio-card.expanded .ejercicio-content {
+            display: block;
+        }
+        
+        /* ===== SMARTWORKOUT SECTION ===== */
+        .smartworkout-section {
+            background: rgba(62, 92, 118, 0.05);
+            border: 2px solid var(--color4);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        
+        .smartworkout-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .smartworkout-section h4 {
+            color: var(--color5);
+            font-size: 13px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        
+        .smartworkout-section p {
+            font-size: 12px;
+            color: var(--color3);
+            margin-bottom: 10px;
+        }
+        
+        .btn-smartworkout {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
+            color: var(--color1);
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-smartworkout:active {
+            transform: scale(0.95);
+        }
+        
+        
+        .media-item { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dashed var(--color2); }
+        .media-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .media-title { font-size: 13px; font-weight: 700; color: var(--color5); margin-bottom: 8px; text-align: left; }
+        .media-aprox { font-size: 10px; background: var(--color2); color: var(--color5); padding: 2px 8px; border-radius: 10px; font-weight: 600; vertical-align: middle; }
+        .media-video { width: 100%; max-height: 320px; border-radius: 8px; background: var(--color5); display: block; margin-bottom: 8px; }
+        .media-thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .media-thumbs img { width: 100%; height: auto; border-radius: 6px; background: var(--color2); aspect-ratio: 1 / 1; object-fit: cover; }
+
+        /* ===== DETALLES ===== */
+        .ejercicio-detalles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        
+        .detalle {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--color4);
+        }
+        
+        .detalle-label {
+            font-size: 11px;
+            color: var(--color3);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+        
+        .detalle-valor {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--color4);
+        }
+        
+        @media (min-width: 600px) {
+            .ejercicio-header {
+                padding: 14px 16px;
+            }
+            
+            .ejercicio-content {
+                padding: 16px;
+            }
+        }
+        
+        /* ===== PROGRESO ===== */
+        .progreso-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--color2);
+        }
+        
+        .progreso-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--color3);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .progreso-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--color2);
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: var(--color5);
+            background: white;
+        }
+        
+        .progreso-input:focus {
+            outline: none;
+            border-color: var(--color4);
+            box-shadow: 0 0 0 3px rgba(62, 92, 118, 0.1);
+        }
+        
+        .progreso-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-check {
+            flex: 1;
+            padding: 10px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-check:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-reset {
+            flex: 1;
+            padding: 10px;
+            background: white;
+            color: var(--color3);
+            border: 2px solid var(--color2);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-reset:active {
+            background: var(--color1);
+        }
+        
+        .completado-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+        
+        /* ===== FOOTER ===== */
+        .footer {
+            margin-top: 32px;
+            padding: 20px 16px;
+            background: white;
+            border-radius: 8px;
+            border-top: 2px solid var(--color2);
+            font-size: 13px;
+            color: var(--color3);
+        }
+        
+        .footer h3 {
+            color: var(--color5);
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        .footer-list {
+            list-style: none;
+        }
+        
+        .footer-list li {
+            margin-bottom: 6px;
+            padding-left: 16px;
+            position: relative;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .footer-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .footer-list strong {
+            color: var(--color5);
+        }
+        
+        /* ===== NOTICE ===== */
+        .notice {
+            background: rgba(201, 220, 232, 0.3);
+            border: 1px solid var(--color3);
+            color: var(--color5);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        /* ===== NO RESULTADOS ===== */
+        .no-resultados {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .no-resultados-icon {
+            font-size: 40px;
+            opacity: 0.3;
+            margin-bottom: 12px;
+        }
+        
+        .no-resultados-text {
+            color: var(--color3);
+            font-size: 14px;
+        }
+        
+        /* ===== FOOTER INFO ===== */
+        .footer-info {
+            text-align: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            font-size: 11px;
+            color: var(--color3);
+            border-top: 1px solid var(--color2);
+        }
+        
+        /* ===== DARK MODE ===== */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: var(--color5);
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #0f1822 0%, #0a0e16 100%);
+            }
+            
+            .container > * {
+                background: var(--color5);
+            }
+            
+            .dia-header,
+            .ejercicio-card,
+            .footer,
+            .password-box {
+                background: #2a3f5f;
+                color: var(--color1);
+            }
+            
+            .ejercicio-info h3,
+            .footer h3,
+            .password-box h2,
+            .dia-header h2 {
+                color: var(--color1);
+            }
+            
+            .tab-btn {
+                color: var(--color2);
+            }
+            
+            .tab-btn.active {
+                color: var(--color1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal Contraseña -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-box">
+            <h2>🔐 Acceso Seguro</h2>
+            <p>Ingresa tu contraseña</p>
+            <input type="password" id="passwordInput" placeholder="Contraseña" autocomplete="off">
+            <button onclick="verificarPassword()">Ingresar</button>
+            <div class="password-error" id="passwordError">Contraseña incorrecta</div>
+        </div>
+    </div>
+    
+    <!-- Main App -->
+    <div class="container" id="mainApp" style="display: none;">
+        <div class="header">
+            <h1>💪 Mi Rutina de Entrenamiento</h1>
+            <p>Programa Full Body • Ectomorfo Intermedio</p>
+            <div class="header-badges">
+                <span class="header-badge">5 días/semana</span>
+                <span class="header-badge">Responsive ✓</span>
+                <span class="header-badge">100% Offline ✓</span>
+            </div>
+        </div>
+        
+        <div class="notice">
+            ✅ <strong>Versión Optimizada para Móvil:</strong> Interfaz completamente responsive y soporta modo oscuro del dispositivo.
+        </div>
+        
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar ejercicio...">
+            </div>
+            <button class="btn-help" onclick="mostrarAyuda()">❓ Ayuda</button>
+        </div>
+        
+        <div class="tabs" id="tabsContainer"></div>
+        
+        <div id="contentContainer"></div>
+        
+        <div class="footer">
+            <h3>📋 Consejos para Ectomorfos</h3>
+            <ul class="footer-list">
+                <li><strong>Nutrición:</strong> Come en superávit calórico (300-500 cal extra)</li>
+                <li><strong>Proteína:</strong> 1.6-2.2g/kg de peso corporal</li>
+                <li><strong>Descanso:</strong> Duerme 7-9 horas cada noche</li>
+                <li><strong>Progresión:</strong> Aumenta peso cada 7-10 días</li>
+                <li><strong>Técnica:</strong> Fase excéntrica de 3 segundos</li>
+            </ul>
+        </div>
+        
+        <div class="footer-info">
+            <p>🏋️ Rutina Offline Responsive • Oct 2026 • Hecho con ❤️ para CHRIS</p>
+        </div>
+    </div>
+    
+    <script>
+        // Validación de contraseña
+        function verificarPassword() {
+            const input = document.getElementById('passwordInput');
+            const clave = 'lituchis';
+            
+            if (input.value === clave) {
+                document.getElementById('passwordModal').classList.add('hidden');
+                document.getElementById('mainApp').style.display = 'block';
+                inicializar();
+            } else {
+                const error = document.getElementById('passwordError');
+                error.classList.add('show');
+                input.value = '';
+                input.focus();
+                setTimeout(() => error.classList.remove('show'), 3000);
+            }
+        }
+        
+        // Detectar Enter en input de contraseña
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('passwordInput');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        verificarPassword();
+                    }
+                });
+                passwordInput.focus();
+            }
+        });
+        
+        // Imágenes, videos y enlaces reales de SmartWorkout (n=nombre, u=enlace, i/i2=imágenes, v=video, a=1 si es el ejercicio más cercano)
+        const MEDIA = {"Press plano con barra":[{"n":"Press de banca con barra","u":"https://smartworkout.app/es/biblioteca-ejercicios/pecho/press-de-banca","i":"https://api.smartworkout.app/asset/image/e3208a71-4196-48e4-afc9-827b57bae299","i2":"https://api.smartworkout.app/asset/image/d5b56239-3e81-4a88-8c0f-96497dd0a656","v":"https://api.smartworkout.app/asset/video/30f3160a-3a57-426a-a3b9-4eed573310f8.mp4","a":0}],"Press inclinado con mancuernas":[{"n":"Press inclinado con mancuernas","u":"https://smartworkout.app/es/biblioteca-ejercicios/pecho/press-inclinado-con-mancuernas","i":"https://api.smartworkout.app/asset/image/8b1b9f19-c61e-45cb-9cbe-9c64dc7c772b","i2":"https://api.smartworkout.app/asset/image/ed1a0387-2cac-4370-b08a-0658722d93d1","v":"https://api.smartworkout.app/asset/video/5081d5c0-5262-45ba-a047-d3d652978d8a.mp4","a":0}],"Cristos en polea":[{"n":"Cruce de Polea Medio","u":"https://smartworkout.app/es/biblioteca-ejercicios/pecho/cruce-de-polea-medio","i":"https://api.smartworkout.app/asset/image/7b070c9e-f1f6-450b-81b4-11055ab55820","i2":"https://api.smartworkout.app/asset/image/6c4c5e0d-fcce-4e86-b4f2-5e4fda0f92a0","v":"https://api.smartworkout.app/asset/video/44caa7ce-5e94-41e7-b0d0-5b3153a86b32.mp4","a":0}],"Press militar con barra":[{"n":"Press militar con barra","u":"https://smartworkout.app/es/biblioteca-ejercicios/hombros/press-militar-con-barra","i":"https://api.smartworkout.app/asset/image/0bb4c5ce-363f-483b-806d-b37be630263a","i2":"https://api.smartworkout.app/asset/image/1e4c39d1-60cb-4262-b204-656c1ad4477f","v":"https://api.smartworkout.app/asset/video/eee45f5c-89a3-45a5-953d-c83cb7c6b817.mp4","a":0}],"Laterales en banco inclinado":[{"n":"Elevación Lateral con Mancuernas Inclinado","u":"https://smartworkout.app/es/biblioteca-ejercicios/hombros/elevacion-lateral-con-mancuernas-inclinado","i":"https://api.smartworkout.app/asset/image/7b9b94f6-ddc1-4565-9612-f2a3cf66b23d","i2":"https://api.smartworkout.app/asset/image/1362003a-9d13-4675-bd7d-db2859c0c82b","v":"https://api.smartworkout.app/asset/video/2ebdc867-f60b-4838-af95-cf69171be570.mp4","a":0}],"Pull face con cuerda":[{"n":"Jalón a la cara en polea","u":"https://smartworkout.app/es/biblioteca-ejercicios/hombros/jalon-de-cara-con-cable","i":"https://api.smartworkout.app/asset/image/1498e6af-21f7-4150-93c4-3c2b55feca6b","i2":"https://api.smartworkout.app/asset/image/afc8ece4-600f-42bb-990b-89d49236348c","v":"https://api.smartworkout.app/asset/video/782de101-95a5-47b3-bffa-82b124a7f3f9.mp4","a":0}],"Sentadilla libre con barra":[{"n":"Sentadilla con barra","u":"https://smartworkout.app/es/biblioteca-ejercicios/piernas/sentadilla-con-barra","i":"https://api.smartworkout.app/asset/image/b64c28a7-4c2b-4a62-80eb-4d144ee30cf1","i2":"https://api.smartworkout.app/asset/image/d6eff42e-51da-4b99-9a2e-117a74f55fbd","v":"https://api.smartworkout.app/asset/video/ceb84676-82fe-4281-81b2-8aef624c83ba.mp4","a":0}],"Prensa + Extensión piernas (SS)":[{"n":"Prensa de piernas","u":"https://smartworkout.app/es/biblioteca-ejercicios/piernas/prensa-de-piernas","i":"https://api.smartworkout.app/asset/image/3722c451-27fa-4e8f-a760-8bee355ce6c5","i2":"https://api.smartworkout.app/asset/image/56cfc251-7b8c-44be-999f-984a79b02726","v":"https://api.smartworkout.app/asset/video/8632c417-b02c-4dc4-8adb-eb1a02646ab9.mp4","a":0},{"n":"Extensión de Piernas en Máquina Sentado","u":"https://smartworkout.app/es/biblioteca-ejercicios/piernas/extension-de-piernas-en-maquina-sentado","i":"https://api.smartworkout.app/asset/image/af5ff572-5586-4f8e-9d49-705e55db8f70","i2":"https://api.smartworkout.app/asset/image/61f2f6d6-2f97-46bb-9c55-ab0cb4fa8cf1","v":"https://api.smartworkout.app/asset/video/10ec53eb-72f0-4335-b81c-8302db893bed.mp4","a":0}],"Búlgaro con mancuernas":[{"n":"Sentadilla búlgara con mancuernas","u":"https://smartworkout.app/es/biblioteca-ejercicios/piernas/sentadilla-bulgara-con-mancuernas","i":"https://api.smartworkout.app/asset/image/f6114e36-d07a-406b-8999-938501d8664a","i2":"https://api.smartworkout.app/asset/image/2a0c157b-835a-4a03-8560-5292b1c28c44","v":"https://api.smartworkout.app/asset/video/aed448e3-12d5-4612-a005-380fed7445c3.mp4","a":0}],"Femoral sentado + ROM (SS)":[{"n":"Curl de Piernas Sentado","u":"https://smartworkout.app/es/biblioteca-ejercicios/piernas/curl-de-piernas-sentado","i":"https://api.smartworkout.app/asset/image/3c695eef-dd5a-47fc-a0f1-d2816abdcecd","i2":"https://api.smartworkout.app/asset/image/6e8e0393-8baa-4a60-bee1-0c5f2d968a84","v":"https://api.smartworkout.app/asset/video/1b19271e-8604-46d5-94a5-6e1fb99b125b.mp4","a":0}],"Hip Thrust con barra":[{"n":"Elevación de cadera con barra","u":"https://smartworkout.app/es/biblioteca-ejercicios/gl%C3%BAteos/elevacion-de-cadera-con-barra","i":"https://api.smartworkout.app/asset/image/3281e50a-f5ef-48a0-8a3b-2f34d4741649","i2":"https://api.smartworkout.app/asset/image/cd5c0b9d-d5e7-46ce-9932-470dbbc09639","v":"https://api.smartworkout.app/asset/video/327ebb47-0e48-4e5f-af24-aca2819cf07f.mp4","a":1}],"Patada en polea baja":[{"n":"Patada de Glúteos en Polea","u":"https://smartworkout.app/es/biblioteca-ejercicios/gl%C3%BAteos/patada-de-gluteos-en-polea","i":"https://api.smartworkout.app/asset/image/06730855-9723-49c8-8335-6934669e0a3f","i2":"https://api.smartworkout.app/asset/image/3735df40-f0b8-44fc-96fb-12fb2617add7","v":"https://api.smartworkout.app/asset/video/9e81ed9f-200d-405e-976c-ac9592d9086d.mp4","a":0}],"Pantorrilla en prensa":[{"n":"Elevación de pantorrilla en prensa","u":"https://smartworkout.app/es/biblioteca-ejercicios/piernas/prensa-de-piernas-para-pantorrillas","i":"https://api.smartworkout.app/asset/image/0ef134b2-5dd7-45f3-ad68-d4a98141a057","i2":"https://api.smartworkout.app/asset/image/287101d9-00ca-42c5-bd77-cd58bb98aa09","v":"https://api.smartworkout.app/asset/video/9f24e3a4-490f-4dab-8ff7-d7d9c5b3fa34.mp4","a":0}],"Pantorrilla parada en polea":[{"n":"Elevaciones de Gemelos en Máquina","u":"https://smartworkout.app/es/biblioteca-ejercicios/piernas/elevaciones-de-gemelos-en-maquina","i":"https://api.smartworkout.app/asset/image/a356dd87-dfd8-407f-8647-90bdd71e453c","i2":"https://api.smartworkout.app/asset/image/aa2c7a94-bc67-4168-aea4-8a920386a937","v":"https://api.smartworkout.app/asset/video/679ce80f-6359-4b23-8e21-b385445fc7fc.mp4","a":1}],"Pulldown prono en máquina":[{"n":"Jalón de dorsales en polea","u":"https://smartworkout.app/es/biblioteca-ejercicios/espalda/jalon-de-dorsales-en-polea","i":"https://api.smartworkout.app/asset/image/10f09183-97bc-41f5-9b93-64ec60941346","i2":"https://api.smartworkout.app/asset/image/820bf558-a6ef-4bfb-b292-eab5a6260ec9","v":"https://api.smartworkout.app/asset/video/4108d42f-8b09-4bc8-b7a9-d8d611d084ac.mp4","a":0}],"Remo mancuerna + Pulldown neutro (SS)":[{"n":"Remo con mancuerna a una mano","u":"https://smartworkout.app/es/biblioteca-ejercicios/espalda/remo-inclinado-con-mancuernas","i":"https://api.smartworkout.app/asset/image/2f246aef-a422-4bbf-ac70-2034f052c06e","i2":"https://api.smartworkout.app/asset/image/4d95bb4a-14da-4f3d-8a85-869da26f9791","v":"https://api.smartworkout.app/asset/video/ef0f8115-83f3-4113-8eeb-ec93fa64456a.mp4","a":0},{"n":"Jalón en polea con agarre neutro","u":"https://smartworkout.app/es/biblioteca-ejercicios/espalda/jalon-en-polea-con-agarre-neutro","i":"https://api.smartworkout.app/asset/image/0404a07c-abe0-4a74-874b-0ebffb86e94c","i2":"https://api.smartworkout.app/asset/image/6ffc75f2-a119-48a6-ba6b-03dad7249a78","v":"https://api.smartworkout.app/asset/video/c770a7c9-0d37-4a81-ae75-f03fe528054d.mp4","a":0}],"Remo parado con barra":[{"n":"Remo con barra inclinado","u":"https://smartworkout.app/es/biblioteca-ejercicios/espalda/remo-con-barra-inclinado","i":"https://api.smartworkout.app/asset/image/5efdde37-25c5-4745-ad71-e7de26d12e27","i2":"https://api.smartworkout.app/asset/image/66d84705-233e-41bb-aba2-4e45be5a675a","v":"https://api.smartworkout.app/asset/video/101feeac-462a-48cc-9376-38a2077b9116.mp4","a":0}],"Pull over con cuerda en polea":[{"n":"Jalón de dorsales con cuerda y brazos rectos","u":"https://smartworkout.app/es/biblioteca-ejercicios/espalda/jalon-de-dorsales-con-cuerda-y-brazos-rectos","i":"https://api.smartworkout.app/asset/image/16a1d50a-909f-4d04-ac59-38561e1e05d3","i2":"https://api.smartworkout.app/asset/image/25135d46-58d4-4046-bf91-0729ca35916f","v":"https://api.smartworkout.app/asset/video/efd0f686-d089-4924-9ea5-2a8408e7b2df.mp4","a":1}],"Curl predicador + Copa cable (SS)":[{"n":"Curl predicador con mancuernas","u":"https://smartworkout.app/es/biblioteca-ejercicios/b%C3%ADceps/curl-predicador-con-mancuernas","i":"https://api.smartworkout.app/asset/image/a0963f4a-a5a5-4499-8ef4-700f82bded6e","i2":"https://api.smartworkout.app/asset/image/97023111-a62e-4b35-a2ac-23bba4395423","v":"https://api.smartworkout.app/asset/video/0e7185a8-532a-400a-b79f-914968a0466f.mp4","a":0},{"n":"Curl en Predicador con Cable","u":"https://smartworkout.app/es/biblioteca-ejercicios/b%C3%ADceps/curl-en-predicador-con-cable","i":"https://api.smartworkout.app/asset/image/de78c788-ccd9-48f5-9458-e231a29e93f8","i2":"https://api.smartworkout.app/asset/image/f0b09358-848e-4153-82dc-98c4a40ba784","v":"https://api.smartworkout.app/asset/video/901d6b71-e16f-43e1-a2c0-598bd8d4b59f.mp4","a":1}],"Curl mancuernas en banco inclinado":[{"n":"Curl alterno supinado con mancuernas en banco inclinado","u":"https://smartworkout.app/es/biblioteca-ejercicios/b%C3%ADceps/curl-alterno-supinado-con-mancuernas-en-banco-inclinado","i":"https://api.smartworkout.app/asset/image/811fb764-7618-483a-a2f3-3aaa33d2d8a2","i2":"https://api.smartworkout.app/asset/image/d9f0885c-ad77-47f1-841e-24eebf77f167","v":"https://api.smartworkout.app/asset/video/a0cf9d35-9654-4208-8851-908e1b46992c.mp4","a":0}],"Remo declinado":[{"n":"Remo en Banco Prono","u":"https://smartworkout.app/es/biblioteca-ejercicios/espalda/remo-en-banco-prono","i":"https://api.smartworkout.app/asset/image/b8a19e88-195c-4709-b716-05b235b32ba9","i2":"https://api.smartworkout.app/asset/image/0472df1d-0092-488f-9095-393a2d38ca02","v":"https://api.smartworkout.app/asset/video/6c6603d9-c72c-46f8-81ac-ef77425475bd.mp4","a":1}],"Press militar en máquina (Smith)":[{"n":"Press de Hombros Sentado en Máquina Smith","u":"https://smartworkout.app/es/biblioteca-ejercicios/hombros/press-de-hombros-sentado-en-maquina-smith","i":"https://api.smartworkout.app/asset/image/52ab237c-a908-4556-b6e4-a95779f2d6db","i2":"https://api.smartworkout.app/asset/image/3a20df53-c6f3-4281-bc2a-cf35ec6443d4","v":"https://api.smartworkout.app/asset/video/8eb388e1-bcba-4008-a658-94173da9ac60.mp4","a":0}],"Pájaros en banco inclinado":[{"n":"Elevación Lateral Posterior en T con Mancuernas en Banco Inclinado","u":"https://smartworkout.app/es/biblioteca-ejercicios/hombros/elevacion-lateral-posterior-en-t-con-mancuernas-en-banco-inclinado","i":"https://api.smartworkout.app/asset/image/7b6c6e1c-4ac2-43d8-b411-640cd2856ada","i2":"https://api.smartworkout.app/asset/image/e12084f3-abd0-4de5-9fdf-d213509d736b","v":"https://api.smartworkout.app/asset/video/690a8f6a-5e32-4ac5-ae61-cf2b700ca4c4.mp4","a":1}],"Laterales + Pull face (SS)":[{"n":"Elevación Lateral con Mancuernas Inclinado","u":"https://smartworkout.app/es/biblioteca-ejercicios/hombros/elevacion-lateral-con-mancuernas-inclinado","i":"https://api.smartworkout.app/asset/image/7b9b94f6-ddc1-4565-9612-f2a3cf66b23d","i2":"https://api.smartworkout.app/asset/image/1362003a-9d13-4675-bd7d-db2859c0c82b","v":"https://api.smartworkout.app/asset/video/2ebdc867-f60b-4838-af95-cf69171be570.mp4","a":1},{"n":"Jalón a la cara en polea","u":"https://smartworkout.app/es/biblioteca-ejercicios/hombros/jalon-de-cara-con-cable","i":"https://api.smartworkout.app/asset/image/1498e6af-21f7-4150-93c4-3c2b55feca6b","i2":"https://api.smartworkout.app/asset/image/afc8ece4-600f-42bb-990b-89d49236348c","v":"https://api.smartworkout.app/asset/video/782de101-95a5-47b3-bffa-82b124a7f3f9.mp4","a":0}],"Predicador + Press francés (SS)":[{"n":"Extensión de tríceps acostado con barra EZ","u":"https://smartworkout.app/es/biblioteca-ejercicios/tr%C3%ADceps/extension-de-triceps-con-barra-ez-en-decubito-supino","i":"https://api.smartworkout.app/asset/image/a480e7e6-cf06-46cb-a66f-b8ebbe166952","i2":"https://api.smartworkout.app/asset/image/4f401dbf-aa01-4022-b483-6dc6519519d3","v":"https://api.smartworkout.app/asset/video/4cafc40d-554d-4dcc-9d18-f2f6c6752dc1.mp4","a":1},{"n":"Curl predicador con mancuernas","u":"https://smartworkout.app/es/biblioteca-ejercicios/b%C3%ADceps/curl-predicador-con-mancuernas","i":"https://api.smartworkout.app/asset/image/a0963f4a-a5a5-4499-8ef4-700f82bded6e","i2":"https://api.smartworkout.app/asset/image/97023111-a62e-4b35-a2ac-23bba4395423","v":"https://api.smartworkout.app/asset/video/0e7185a8-532a-400a-b79f-914968a0466f.mp4","a":0}],"Extensión tríceps con cuerda en polea":[{"n":"Extensión de Tríceps con Cuerda","u":"https://smartworkout.app/es/biblioteca-ejercicios/tr%C3%ADceps/extension-de-triceps-con-cuerda","i":"https://api.smartworkout.app/asset/image/f6d5d65c-9a5c-47cb-9c54-ed96a2449154","i2":"https://api.smartworkout.app/asset/image/86e23a4b-fbef-496f-bcc7-ab683bfdd68e","v":"https://api.smartworkout.app/asset/video/5b3b82b1-8d1d-41e0-b6f7-37c0f3bbf7e9.mp4","a":0}],"Cables cruzados tríceps":[{"n":"Extensión de tríceps en cruce con cable","u":"https://smartworkout.app/es/biblioteca-ejercicios/tr%C3%ADceps/extension-de-triceps-en-cruce-con-cable","i":"https://api.smartworkout.app/asset/image/ee130fb9-eaf6-4a28-8fe9-d700e8e7afa2","i2":"https://api.smartworkout.app/asset/image/f22d09a2-4a1f-4c98-8bf2-855491fb8f75","v":"https://api.smartworkout.app/asset/video/bd97155f-d348-4a0f-9b59-78210312e476.mp4","a":0}],"Curl martillo con mancuernas":[{"n":"Curl de Martillo con Mancuernas","u":"https://smartworkout.app/es/biblioteca-ejercicios/b%C3%ADceps/curl-de-martillo-con-mancuernas","i":"https://api.smartworkout.app/asset/image/3a81295e-595f-412b-b6b5-58c25588e2f0","i2":"https://api.smartworkout.app/asset/image/22735644-ce1f-403f-9edf-e12592d85abc","v":"https://api.smartworkout.app/asset/video/42bee169-b8e8-4142-8707-dcb1f8267e31.mp4","a":0}],"Curl reverso con barra":[{"n":"Curl inverso con barra EZ","u":"https://smartworkout.app/es/biblioteca-ejercicios/antebrazos/curl-de-biceps-con-barra-ez-agarre-inverso","i":"https://api.smartworkout.app/asset/image/72597798-8f4a-422a-b3f6-ba748d0c1268","i2":"https://api.smartworkout.app/asset/image/fea02485-4b16-45f1-928e-10d0809d779b","v":"https://api.smartworkout.app/asset/video/efced1a3-97b1-4175-b3cb-14d9c3701ff9.mp4","a":1}],"Extensión de muñeca con barra":[{"n":"Curl de muñeca inverso con barra","u":"https://smartworkout.app/es/biblioteca-ejercicios/antebrazos/curl-de-muneca-inverso-con-barra","i":"https://api.smartworkout.app/asset/image/9f3089e3-2d36-4ae3-b96c-cd3e45075c3b","i2":"https://api.smartworkout.app/asset/image/50ea0174-428b-42da-9fdc-c50ed057ca91","v":"https://api.smartworkout.app/asset/video/e800f525-c7ea-4236-a0f8-527fa049fa26.mp4","a":1}],"Flexión de muñeca con mancuerna":[{"n":"Curl de Muñeca con Mancuerna a Una Mano","u":"https://smartworkout.app/es/biblioteca-ejercicios/antebrazos/curl-de-muneca-con-mancuerna-a-una-mano","i":"https://api.smartworkout.app/asset/image/f477c9e6-0f1f-494c-8a5a-de7af42d2452","i2":"https://api.smartworkout.app/asset/image/95cd4d02-2202-4bc7-9028-f9e9fab92590","v":"https://api.smartworkout.app/asset/video/bf03dca1-be41-4535-827b-7121113da8a3.mp4","a":0}],"Pronación/Supinación con disco":[{"n":"Pronación acostada con mancuernas","u":"https://smartworkout.app/es/biblioteca-ejercicios/antebrazos/pronacion-acostada-con-mancuernas","i":"https://api.smartworkout.app/asset/image/593c9f03-84b3-4cca-9b29-ed21dc5a50cf","i2":"https://api.smartworkout.app/asset/image/151fce60-b291-4a20-b4eb-ed16135cdf1b","v":"https://api.smartworkout.app/asset/video/7edeecef-6ab8-4dae-9860-cff466008288.mp4","a":1},{"n":"Supinación con Mancuernas en Decúbito","u":"https://smartworkout.app/es/biblioteca-ejercicios/antebrazos/supinacion-con-mancuernas-en-decubito","i":"https://api.smartworkout.app/asset/image/5c8281f4-c93e-40b5-85b4-89a96f9caab3","i2":"https://api.smartworkout.app/asset/image/1a4d6db2-c62b-4550-a542-1c0bc3b5341d","v":"https://api.smartworkout.app/asset/video/1f1604cb-328b-40eb-a4a0-ca44282fa4db.mp4","a":1}],"Crunch + Elevación piernas (SS)":[{"n":"Abdominales Crunch","u":"https://smartworkout.app/es/biblioteca-ejercicios/abdominales/abdominales-crunch","i":"https://api.smartworkout.app/asset/image/073f7b9c-a2ff-4ef5-aba8-6042f50fe4a6","i2":"https://api.smartworkout.app/asset/image/96592276-d2f5-4ce8-8e5a-947b98cf26fe","v":"https://api.smartworkout.app/asset/video/b980df05-5c31-428d-85e2-4fd60362a453.mp4","a":0},{"n":"Elevación de piernas rectas acostado","u":"https://smartworkout.app/es/biblioteca-ejercicios/abdominales/elevacion-de-piernas-rectas-acostado","i":"https://api.smartworkout.app/asset/image/4b72ab0c-e602-4071-a27c-80abbd86e1c5","i2":"https://api.smartworkout.app/asset/image/62026f9b-a089-4025-8746-f9f098181d25","v":"https://api.smartworkout.app/asset/video/869b2894-d82f-4f8a-b393-d658a2f6617d.mp4","a":0}],"Plancha lateral alternada":[{"n":"Plancha lateral","u":"https://smartworkout.app/es/biblioteca-ejercicios/abdominales/plancha-lateral","i":"https://api.smartworkout.app/asset/image/2f5c4de5-b32b-4ce9-80c1-0e7135060907","i2":"https://api.smartworkout.app/asset/image/5354236a-017b-44f8-a910-56083163bb35","v":"https://api.smartworkout.app/asset/video/f9ceb2e1-f7ba-4954-8cb7-78d6b60858fc.mp4","a":0}],"Cable Wood Chop":[{"n":"Corte de leña con banda de alta a baja","u":"https://smartworkout.app/es/biblioteca-ejercicios/abdominales/corte-de-lena-con-banda-de-alta-a-baja","i":"https://api.smartworkout.app/asset/image/95a719d4-ca7f-404f-ba1f-bf9f98105252","i2":"https://api.smartworkout.app/asset/image/960c388b-7b13-4d1e-8790-2e207cbcfd6e","v":"https://api.smartworkout.app/asset/video/c899c33e-0594-4ea2-93e5-7bec1ab3bbb5.mp4","a":1}],"Decline Crunch":[{"n":"Abdominales en Banco Declinado","u":"https://smartworkout.app/es/biblioteca-ejercicios/abdominales/abdominales-en-banco-declinado","i":"https://api.smartworkout.app/asset/image/af85cfea-aa2e-4f53-bdf5-55d2156bfbc6","i2":"https://api.smartworkout.app/asset/image/4d39ee40-9944-4138-a83d-858f0baa1c78","v":"https://api.smartworkout.app/asset/video/d4a61221-9c27-4acd-8b69-6ca55de2a911.mp4","a":0}]};
+
+        function mediaHTML(nombre) {
+            const items = MEDIA[nombre] || [];
+            if (!items.length) return '';
+            return items.map(m => `
+                <div class="media-item">
+                    <div class="media-title">${m.n}${m.a ? ' <span class="media-aprox">similar</span>' : ''}</div>
+                    <video class="media-video" controls muted loop playsinline preload="none" poster="${m.i}">
+                        <source src="${m.v}" type="video/mp4">
+                    </video>
+                    <div class="media-thumbs">
+                        <img src="${m.i}" alt="${m.n} - posición 1" loading="lazy">
+                        <img src="${m.i2}" alt="${m.n} - posición 2" loading="lazy">
+                    </div>
+                    <a href="${m.u}" target="_blank" rel="noopener" class="btn-smartworkout">🎬 Ver en SmartWorkout</a>
+                </div>`).join('');
+        }
+        
+        const RUTINA = {
+            "LUNES": {
+                titulo: "PECHO & HOMBRO",
+                duracion: "50-55 min",
+                ejercicios: [
+                    { nombre: "Press plano con barra", series: "4", reps: "8-10", tipo: "Compuesto", musculo: "Pectoral mayor" },
+                    { nombre: "Press inclinado con mancuernas", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Pectoral superior" },
+                    { nombre: "Cristos en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Pectoral interno" },
+                    { nombre: "Press militar con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Deltoides anterior" },
+                    { nombre: "Laterales en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Deltoides lateral" },
+                    { nombre: "Pull face con cuerda", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Hombro posterior" }
+                ]
+            },
+            "MARTES": {
+                titulo: "PIERNA COMPLETA",
+                duracion: "70-80 min",
+                ejercicios: [
+                    { nombre: "Sentadilla libre con barra", series: "4", reps: "8-10", tipo: "Compuesto", musculo: "Cuádriceps/Glúteo" },
+                    { nombre: "Prensa + Extensión piernas (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Cuádriceps" },
+                    { nombre: "Búlgaro con mancuernas", series: "3", reps: "10-12", tipo: "Compuesto", musculo: "Cuádriceps/Glúteo" },
+                    { nombre: "Femoral sentado + ROM (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Isquiotibiales" },
+                    { nombre: "Hip Thrust con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Glúteo mayor" },
+                    { nombre: "Patada en polea baja", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Glúteo" },
+                    { nombre: "Pantorrilla en prensa", series: "4", reps: "12-15", tipo: "Aislamiento", musculo: "Gemelos/Sóleo" },
+                    { nombre: "Pantorrilla parada en polea", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Gemelos" }
+                ]
+            },
+            "MIERCOLES": {
+                titulo: "ESPALDA & BÍCEPS",
+                duracion: "50-55 min",
+                ejercicios: [
+                    { nombre: "Pulldown prono en máquina", series: "3", reps: "8-12", tipo: "Compuesto", musculo: "Dorsal ancho" },
+                    { nombre: "Remo mancuerna + Pulldown neutro (SS)", series: "3", reps: "8-12", tipo: "Superserie", musculo: "Dorsal/Romboides" },
+                    { nombre: "Remo parado con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Trapecio/Romboides" },
+                    { nombre: "Pull over con cuerda en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Dorsal/Serrato" },
+                    { nombre: "Curl predicador + Copa cable (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Bíceps braquial" },
+                    { nombre: "Curl mancuernas en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Bíceps cabeza larga" },
+                    { nombre: "Remo declinado", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Dorsal/Espalda baja" }
+                ]
+            },
+            "JUEVES": {
+                titulo: "HOMBRO & TRÍCEPS",
+                duracion: "50-55 min",
+                ejercicios: [
+                    { nombre: "Press militar en máquina (Smith)", series: "3", reps: "8-12", tipo: "Compuesto", musculo: "Deltoides anterior" },
+                    { nombre: "Pájaros en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Deltoides posterior" },
+                    { nombre: "Laterales + Pull face (SS)", series: "3", reps: "12-15", tipo: "Superserie", musculo: "Deltoides lateral/posterior" },
+                    { nombre: "Predicador + Press francés (SS)", series: "3", reps: "8-12", tipo: "Superserie", musculo: "Tríceps cabeza larga" },
+                    { nombre: "Extensión tríceps con cuerda en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Tríceps" },
+                    { nombre: "Cables cruzados tríceps", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Tríceps cabeza lateral" }
+                ]
+            },
+            "VIERNES": {
+                titulo: "ANTEBRAZOS & ABDOMINALES",
+                duracion: "35-40 min",
+                ejercicios: [
+                    { nombre: "Curl martillo con mancuernas", series: "3", reps: "12", tipo: "Aislamiento", musculo: "Braquiorradial" },
+                    { nombre: "Curl reverso con barra", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Braquiorradial" },
+                    { nombre: "Extensión de muñeca con barra", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Extensor carpi" },
+                    { nombre: "Flexión de muñeca con mancuerna", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Flexor" },
+                    { nombre: "Pronación/Supinación con disco", series: "2", reps: "15", tipo: "Aislamiento", musculo: "Antebrazo" },
+                    { nombre: "Crunch + Elevación piernas (SS)", series: "3", reps: "15 c/u", tipo: "Core", musculo: "Recto abdominal" },
+                    { nombre: "Plancha lateral alternada", series: "3", reps: "20-30 seg", tipo: "Core", musculo: "Oblicuos" },
+                    { nombre: "Cable Wood Chop", series: "3", reps: "12-15", tipo: "Core", musculo: "Oblicuos" },
+                    { nombre: "Decline Crunch", series: "3", reps: "12-15", tipo: "Core", musculo: "Recto abdominal" }
+                ]
+            }
+        };
+        
+        let diaSeleccionado = "LUNES";
+        let expandidos = {};
+        let completados = JSON.parse(localStorage.getItem('completados')) || {};
+        
+        function inicializar() {
+            renderTabs();
+            renderContent();
+            document.getElementById('searchInput').addEventListener('input', buscar);
+        }
+        
+        function renderTabs() {
+            const container = document.getElementById('tabsContainer');
+            container.innerHTML = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'].map(dia => 
+                `<button class="tab-btn ${dia === diaSeleccionado ? 'active' : ''}" onclick="cambiarDia('${dia}')">${dia}</button>`
+            ).join('');
+        }
+        
+        function cambiarDia(dia) {
+            diaSeleccionado = dia;
+            renderTabs();
+            renderContent();
+            document.getElementById('searchInput').value = '';
+            document.getElementById('tabsContainer').scrollLeft = 0;
+        }
+        
+        function renderContent() {
+            const container = document.getElementById('contentContainer');
+            const datosEjercicios = RUTINA[diaSeleccionado].ejercicios;
+            
+            let html = `
+                <div class="dia-header">
+                    <h2>${diaSeleccionado} - ${RUTINA[diaSeleccionado].titulo}</h2>
+                    <p>⏱️ Duración: ${RUTINA[diaSeleccionado].duracion}</p>
+                </div>
+            `;
+            
+            datosEjercicios.forEach((ej, idx) => {
+                const id = `${diaSeleccionado}-${idx}`;
+                const expanded = expandidos[id] ? 'expanded' : '';
+                const isCompleted = completados[id];
+                const toggleIcon = expandidos[id] ? '−' : '+';
+                
+                
+                html += `
+                    <div class="ejercicio-card ${expanded}" id="card-${id}">
+                        <div class="ejercicio-header" onclick="toggleEjercicio('${id}')">
+                            <div style="flex: 1;">
+                                <div class="ejercicio-info">
+                                    <h3>${ej.nombre}</h3>
+                                    <div class="ejercicio-tags">
+                                        <span class="tag tipo">${ej.musculo}</span>
+                                        <span class="tag">${ej.tipo}</span>
+                                    </div>
+                                    ${isCompleted ? '<div class="completado-badge">✓ Hecho</div>' : ''}
+                                </div>
+                            </div>
+                            <div class="ejercicio-toggle">${toggleIcon}</div>
+                        </div>
+                        <div class="ejercicio-content">
+                            <div class="smartworkout-section">${mediaHTML(ej.nombre)}</div>
+                            
+                            <div class="ejercicio-detalles">
+                                <div class="detalle">
+                                    <div class="detalle-label">Series</div>
+                                    <div class="detalle-valor">${ej.series}</div>
+                                </div>
+                                <div class="detalle">
+                                    <div class="detalle-label">Reps</div>
+                                    <div class="detalle-valor">${ej.reps}</div>
+                                </div>
+                                <div class="detalle">
+                                    <div class="detalle-label">Descanso</div>
+                                    <div class="detalle-valor">60-120s</div>
+                                </div>
+                                <div class="detalle">
+                                    <div class="detalle-label">Tipo</div>
+                                    <div class="detalle-valor">${ej.tipo.substring(0, 10)}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="progreso-section">
+                                <div class="progreso-title">Mis notas</div>
+                                <input type="text" id="notas-${id}" class="progreso-input" placeholder="Peso, series...">
+                                <div class="progreso-buttons">
+                                    <button class="btn-check" onclick="marcarCompleto('${id}')">✓ Hecho</button>
+                                    <button class="btn-reset" onclick="limpiarProgreso('${id}')">Limpiar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleEjercicio(id) {
+            expandidos[id] = !expandidos[id];
+            const card = document.getElementById(`card-${id}`);
+            if (card) card.classList.toggle('expanded');
+        }
+        
+        function marcarCompleto(id) {
+            const notas = document.getElementById(`notas-${id}`).value;
+            completados[id] = { fecha: new Date().toLocaleString(), notas: notas };
+            localStorage.setItem('completados', JSON.stringify(completados));
+            renderContent();
+        }
+        
+        function limpiarProgreso(id) {
+            delete completados[id];
+            localStorage.setItem('completados', JSON.stringify(completados));
+            renderContent();
+        }
+        
+        function buscar(e) {
+            const query = e.target.value.toLowerCase();
+            const container = document.getElementById('contentContainer');
+            
+            if (!query) {
+                renderContent();
+                return;
+            }
+            
+            const resultados = RUTINA[diaSeleccionado].ejercicios.filter(ej => 
+                ej.nombre.toLowerCase().includes(query) || 
+                ej.musculo.toLowerCase().includes(query)
+            );
+            
+            if (resultados.length === 0) {
+                container.innerHTML = `
+                    <div class="no-resultados">
+                        <div class="no-resultados-icon">🔍</div>
+                        <div class="no-resultados-text">No encontramos ejercicios</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            resultados.forEach((ej) => {
+                
+                html += `
+                    <div class="ejercicio-card">
+                        <div class="ejercicio-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <div style="flex: 1;">
+                                <div class="ejercicio-info">
+                                    <h3>${ej.nombre}</h3>
+                                    <div class="ejercicio-tags"><span class="tag tipo">${ej.musculo}</span></div>
+                                </div>
+                            </div>
+                            <div class="ejercicio-toggle">+</div>
+                        </div>
+                        <div class="ejercicio-content">
+                            <div class="smartworkout-section">${mediaHTML(ej.nombre)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function mostrarAyuda() {
+            alert('💪 CÓMO USAR\\n\\n✓ Tap en tabs para cambiar día\\n✓ Tap en ejercicio para expandir\\n✓ "Abrir" para ver en SmartWorkout\\n✓ Marca como hecho\\n✓ Datos se guardan automáticamente\\n\\n🎯 RESPONSIVE\\nSe adapta a cualquier dispositivo\\n\\n¡A entrenar! 💪');
+        }
+    </script>
+</body>
+</html>
