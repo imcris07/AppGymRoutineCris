@@ -317,6 +317,17 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
         .ring .val{fill:none;stroke:var(--ac);stroke-linecap:round;transition:stroke-dashoffset .6s var(--ease)}
         .ring span{position:absolute;inset:0;display:grid;place-items:center;font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:18px;color:var(--ac-ink)}
         .dia-top{align-items:center}
+        .btn-descanso{width:100%;min-height:48px;border-radius:14px;border:2px solid var(--ac);background:var(--surf);color:var(--ac-ink);font-weight:700;font-size:15px;margin-bottom:12px;transition:background-color .2s,color .2s}
+        .btn-descanso:hover{background:var(--ac);color:var(--on-ac)}
+        .descanso-dlg{text-align:center;max-width:min(92vw,340px)}
+        .descanso-dlg .cuenta{font-family:'Space Grotesk',system-ui,sans-serif;font-size:64px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--ac-ink);margin:8px 0 20px}
+        .desc-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .desc-btns button{width:100%;min-height:48px;border-radius:14px;border:2px solid var(--ac);background:var(--surf);color:var(--ac-ink);font-weight:800;font-size:16px;cursor:pointer}
+        .desc-btns button:last-child{background:var(--ac);color:var(--on-ac)}
+        .descanso-dlg.listo{box-shadow:0 0 0 6px color-mix(in srgb,var(--ok) 45%,transparent),var(--shadow-lg)}
+        .descanso-dlg.listo h2{color:var(--ok)}
+        .descanso-dlg.listo .cuenta{color:var(--ok);animation:pulsoDesc .7s var(--ease) 0s 4}
+        @keyframes pulsoDesc{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
     </style>
 </head>
 <body data-perfil="cris">
@@ -393,6 +404,14 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
                 <li>Todo se guarda automáticamente en tu dispositivo.</li>
             </ul>
             <button onclick="this.closest('dialog').close()">Entendido</button>
+        </dialog>
+        <dialog id="descanso" aria-labelledby="descansoT" class="descanso-dlg">
+            <h2 id="descansoT">⏱️ Descanso</h2>
+            <div class="cuenta" id="cuenta" role="timer" aria-live="off">00:00</div>
+            <div class="desc-btns">
+                <button onclick="sumarDescanso(15)">+15 s</button>
+                <button onclick="cerrarDescanso()">Terminar</button>
+            </div>
         </dialog>
     </div>
 
@@ -471,66 +490,66 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
                 titulo: "PECHO & HOMBRO",
                 duracion: "50-55 min",
                 ejercicios: [
-                    { nombre: "Press plano con barra", series: "4", reps: "8-10", tipo: "Compuesto", musculo: "Pectoral mayor" },
-                    { nombre: "Press inclinado con mancuernas", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Pectoral superior" },
-                    { nombre: "Cristos en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Pectoral interno" },
-                    { nombre: "Press militar con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Deltoides anterior" },
-                    { nombre: "Laterales en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Deltoides lateral" },
-                    { nombre: "Pull face con cuerda", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Hombro posterior" }
+                    { nombre: "Press plano con barra", series: "4", reps: "8-10", tipo: "Compuesto", musculo: "Pectoral mayor", descanso: "90s" },
+                    { nombre: "Press inclinado con mancuernas", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Pectoral superior", descanso: "90s" },
+                    { nombre: "Cristos en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Pectoral interno", descanso: "60s" },
+                    { nombre: "Press militar con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Deltoides anterior", descanso: "90s" },
+                    { nombre: "Laterales en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Deltoides lateral", descanso: "60s" },
+                    { nombre: "Pull face con cuerda", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Hombro posterior", descanso: "60s" }
                 ]
             },
             "MARTES": {
                 titulo: "PIERNA COMPLETA",
                 duracion: "70-80 min",
                 ejercicios: [
-                    { nombre: "Sentadilla libre con barra", series: "4", reps: "8-10", tipo: "Compuesto", musculo: "Cuádriceps/Glúteo" },
-                    { nombre: "Prensa + Extensión piernas (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Cuádriceps" },
-                    { nombre: "Búlgaro con mancuernas", series: "3", reps: "10-12", tipo: "Compuesto", musculo: "Cuádriceps/Glúteo" },
-                    { nombre: "Femoral sentado + ROM (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Isquiotibiales" },
-                    { nombre: "Hip Thrust con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Glúteo mayor" },
-                    { nombre: "Patada en polea baja", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Glúteo" },
-                    { nombre: "Pantorrilla en prensa", series: "4", reps: "12-15", tipo: "Aislamiento", musculo: "Gemelos/Sóleo" },
-                    { nombre: "Pantorrilla parada en polea", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Gemelos" }
+                    { nombre: "Sentadilla libre con barra", series: "4", reps: "8-10", tipo: "Compuesto", musculo: "Cuádriceps/Glúteo", descanso: "90s" },
+                    { nombre: "Prensa + Extensión piernas (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Cuádriceps", descanso: "60s" },
+                    { nombre: "Búlgaro con mancuernas", series: "3", reps: "10-12", tipo: "Compuesto", musculo: "Cuádriceps/Glúteo", descanso: "90s" },
+                    { nombre: "Femoral sentado + ROM (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Isquiotibiales", descanso: "60s" },
+                    { nombre: "Hip Thrust con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Glúteo mayor", descanso: "90s" },
+                    { nombre: "Patada en polea baja", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Glúteo", descanso: "60s" },
+                    { nombre: "Pantorrilla en prensa", series: "4", reps: "12-15", tipo: "Aislamiento", musculo: "Gemelos/Sóleo", descanso: "60s" },
+                    { nombre: "Pantorrilla parada en polea", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Gemelos", descanso: "60s" }
                 ]
             },
             "MIERCOLES": {
                 titulo: "ESPALDA & BÍCEPS",
                 duracion: "50-55 min",
                 ejercicios: [
-                    { nombre: "Pulldown prono en máquina", series: "3", reps: "8-12", tipo: "Compuesto", musculo: "Dorsal ancho" },
-                    { nombre: "Remo mancuerna + Pulldown neutro (SS)", series: "3", reps: "8-12", tipo: "Superserie", musculo: "Dorsal/Romboides" },
-                    { nombre: "Remo parado con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Trapecio/Romboides" },
-                    { nombre: "Pull over con cuerda en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Dorsal/Serrato" },
-                    { nombre: "Curl predicador + Copa cable (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Bíceps braquial" },
-                    { nombre: "Curl mancuernas en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Bíceps cabeza larga" },
-                    { nombre: "Remo declinado", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Dorsal/Espalda baja" }
+                    { nombre: "Pulldown prono en máquina", series: "3", reps: "8-12", tipo: "Compuesto", musculo: "Dorsal ancho", descanso: "90s" },
+                    { nombre: "Remo mancuerna + Pulldown neutro (SS)", series: "3", reps: "8-12", tipo: "Superserie", musculo: "Dorsal/Romboides", descanso: "60s" },
+                    { nombre: "Remo parado con barra", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Trapecio/Romboides", descanso: "90s" },
+                    { nombre: "Pull over con cuerda en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Dorsal/Serrato", descanso: "60s" },
+                    { nombre: "Curl predicador + Copa cable (SS)", series: "3", reps: "10-12", tipo: "Superserie", musculo: "Bíceps braquial", descanso: "60s" },
+                    { nombre: "Curl mancuernas en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Bíceps cabeza larga", descanso: "60s" },
+                    { nombre: "Remo declinado", series: "3", reps: "8-10", tipo: "Compuesto", musculo: "Dorsal/Espalda baja", descanso: "90s" }
                 ]
             },
             "JUEVES": {
                 titulo: "HOMBRO & TRÍCEPS",
                 duracion: "50-55 min",
                 ejercicios: [
-                    { nombre: "Press militar en máquina (Smith)", series: "3", reps: "8-12", tipo: "Compuesto", musculo: "Deltoides anterior" },
-                    { nombre: "Pájaros en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Deltoides posterior" },
-                    { nombre: "Laterales + Pull face (SS)", series: "3", reps: "12-15", tipo: "Superserie", musculo: "Deltoides lateral/posterior" },
-                    { nombre: "Predicador + Press francés (SS)", series: "3", reps: "8-12", tipo: "Superserie", musculo: "Tríceps cabeza larga" },
-                    { nombre: "Extensión tríceps con cuerda en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Tríceps" },
-                    { nombre: "Cables cruzados tríceps", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Tríceps cabeza lateral" }
+                    { nombre: "Press militar en máquina (Smith)", series: "3", reps: "8-12", tipo: "Compuesto", musculo: "Deltoides anterior", descanso: "90s" },
+                    { nombre: "Pájaros en banco inclinado", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Deltoides posterior", descanso: "60s" },
+                    { nombre: "Laterales + Pull face (SS)", series: "3", reps: "12-15", tipo: "Superserie", musculo: "Deltoides lateral/posterior", descanso: "60s" },
+                    { nombre: "Predicador + Press francés (SS)", series: "3", reps: "8-12", tipo: "Superserie", musculo: "Tríceps cabeza larga", descanso: "60s" },
+                    { nombre: "Extensión tríceps con cuerda en polea", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Tríceps", descanso: "60s" },
+                    { nombre: "Cables cruzados tríceps", series: "3", reps: "10-12", tipo: "Aislamiento", musculo: "Tríceps cabeza lateral", descanso: "60s" }
                 ]
             },
             "VIERNES": {
                 titulo: "ANTEBRAZOS & ABDOMINALES",
                 duracion: "35-40 min",
                 ejercicios: [
-                    { nombre: "Curl martillo con mancuernas", series: "3", reps: "12", tipo: "Aislamiento", musculo: "Braquiorradial" },
-                    { nombre: "Curl reverso con barra", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Braquiorradial" },
-                    { nombre: "Extensión de muñeca con barra", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Extensor carpi" },
-                    { nombre: "Flexión de muñeca con mancuerna", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Flexor" },
-                    { nombre: "Pronación/Supinación con disco", series: "2", reps: "15", tipo: "Aislamiento", musculo: "Antebrazo" },
-                    { nombre: "Crunch + Elevación piernas (SS)", series: "3", reps: "15 c/u", tipo: "Core", musculo: "Recto abdominal" },
-                    { nombre: "Plancha lateral alternada", series: "3", reps: "20-30 seg", tipo: "Core", musculo: "Oblicuos" },
-                    { nombre: "Cable Wood Chop", series: "3", reps: "12-15", tipo: "Core", musculo: "Oblicuos" },
-                    { nombre: "Decline Crunch", series: "3", reps: "12-15", tipo: "Core", musculo: "Recto abdominal" }
+                    { nombre: "Curl martillo con mancuernas", series: "3", reps: "12", tipo: "Aislamiento", musculo: "Braquiorradial", descanso: "60s" },
+                    { nombre: "Curl reverso con barra", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Braquiorradial", descanso: "60s" },
+                    { nombre: "Extensión de muñeca con barra", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Extensor carpi", descanso: "60s" },
+                    { nombre: "Flexión de muñeca con mancuerna", series: "3", reps: "12-15", tipo: "Aislamiento", musculo: "Flexor", descanso: "60s" },
+                    { nombre: "Pronación/Supinación con disco", series: "2", reps: "15", tipo: "Aislamiento", musculo: "Antebrazo", descanso: "60s" },
+                    { nombre: "Crunch + Elevación piernas (SS)", series: "3", reps: "15 c/u", tipo: "Core", musculo: "Recto abdominal", descanso: "45s" },
+                    { nombre: "Plancha lateral alternada", series: "3", reps: "20-30 seg", tipo: "Core", musculo: "Oblicuos", descanso: "45s" },
+                    { nombre: "Cable Wood Chop", series: "3", reps: "12-15", tipo: "Core", musculo: "Oblicuos", descanso: "45s" },
+                    { nombre: "Decline Crunch", series: "3", reps: "12-15", tipo: "Core", musculo: "Recto abdominal", descanso: "45s" }
                 ]
             }
         };
@@ -1206,6 +1225,7 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
                                 <div class="detalle"><div class="detalle-label">Descanso</div><div class="detalle-valor">${ej.descanso || '60-120s'}</div></div>
                                 <div class="detalle"><div class="detalle-label">Tipo</div><div class="detalle-valor">${ej.tipo.substring(0, 10)}</div></div>
                             </div>
+                            ${ej.descanso ? `<button class="btn-descanso rip" onclick="iniciarDescanso(${parseInt(ej.descanso, 10) || 60})">⏱️ Descanso ${ej.descanso}</button>` : ''}
                             <div class="progreso-title">Mis notas</div>
                             <input type="text" id="notas-${id}" class="progreso-input" placeholder="Peso, series…" aria-label="Notas de ${esc(ej.nombre)}" value="${esc(c && c.notas)}">
                             <div class="progreso-buttons">
@@ -1331,6 +1351,101 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
             const d = $('ayuda');
             if (d.showModal) d.showModal(); else d.setAttribute('open', '');
         }
+
+        // Temporizador de descanso: usa la hora de término, así sigue bien aunque la pantalla se apague
+        let descFin = 0, descTimer = null, descActivo = false, wakeLock = null, audioCtx = null;
+
+        // Mantener la pantalla encendida mientras el popup de descanso está abierto
+        async function mantenerPantalla(on) {
+            if (!('wakeLock' in navigator)) return;
+            try {
+                if (on && !wakeLock) {
+                    const lock = await navigator.wakeLock.request('screen');
+                    if (!descActivo) { lock.release(); return; }
+                    wakeLock = lock;
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                } else if (!on && wakeLock) {
+                    await wakeLock.release();
+                    wakeLock = null;
+                }
+            } catch (e) { wakeLock = null; }
+        }
+        // Al volver a la app, el navegador suelta el bloqueo; se vuelve a pedir
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && descActivo) mantenerPantalla(true);
+        });
+
+        // El audio se prepara con el toque del botón, que es cuando el navegador lo permite
+        function prepararAudio() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) { audioCtx = null; }
+        }
+
+        function iniciarDescanso(seg) {
+            descFin = Date.now() + seg * 1000;
+            descActivo = true;
+            prepararAudio();
+            mantenerPantalla(true);
+            clearInterval(descTimer);
+            descTimer = setInterval(descTick, 250);
+            const dlg = $('descanso');
+            dlg.classList.remove('listo');
+            $('descansoT').textContent = '⏱️ Descanso';
+            descTick();
+            if (!dlg.open) dlg.showModal();
+        }
+        function descTick() {
+            const r = Math.max(0, Math.ceil((descFin - Date.now()) / 1000));
+            $('cuenta').textContent = String(Math.floor(r / 60)).padStart(2, '0') + ':' + String(r % 60).padStart(2, '0');
+            if (r === 0 && descTimer) {
+                clearInterval(descTimer);
+                descTimer = null;
+                terminarDescanso();
+            }
+        }
+        // Cierre visible: el popup pulsa en verde, cambia el título y vibra/suena
+        function terminarDescanso() {
+            const dlg = $('descanso');
+            dlg.classList.add('listo');
+            $('descansoT').textContent = '¡Descanso terminado!';
+            avisarDescanso();
+        }
+        // Tono de tres pitidos en onda cuadrada (se oye más que un seno a la misma amplitud)
+        function avisarDescanso() {
+            if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 400]);
+            if (!audioCtx) return;
+            const t0 = audioCtx.currentTime;
+            [0, 0.5, 1.0].forEach(off => {
+                const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = 'square';
+                o.frequency.value = 1000;
+                o.connect(g); g.connect(audioCtx.destination);
+                g.gain.setValueAtTime(0.0001, t0 + off);
+                g.gain.exponentialRampToValueAtTime(0.6, t0 + off + 0.01);
+                g.gain.setValueAtTime(0.6, t0 + off + 0.3);
+                g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.35);
+                o.start(t0 + off);
+                o.stop(t0 + off + 0.36);
+            });
+        }
+        function sumarDescanso(seg) {
+            descFin += seg * 1000;
+            $('descanso').classList.remove('listo');
+            $('descansoT').textContent = '⏱️ Descanso';
+            if (!descTimer) descTimer = setInterval(descTick, 250);
+            descTick();
+        }
+        function cerrarDescanso() {
+            descActivo = false;
+            clearInterval(descTimer);
+            descTimer = null;
+            mantenerPantalla(false);
+            $('descanso').close();
+        }
+        $('descanso').addEventListener('close', cerrarDescanso);
+        $('descanso').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarDescanso(); });
 
         function initGestos() {
             let x0, y0, t0, ok = false;
