@@ -9,6 +9,9 @@
     <meta name="theme-color" id="themeColor" content="#083D77">
     <meta name="color-scheme" content="light dark">
     <title>Rutina de Entrenamiento - Cris y Fafis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -162,9 +165,6 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-user-select:none;user-s
 .thumbs .frame{aspect-ratio:1/1}
 .media-fallback{font-size:14px;color:var(--err);background:var(--err-bg);border:1.5px solid var(--err-line);border-radius:14px;padding:10px 12px;margin-bottom:10px;font-weight:500}
 .media-fallback[hidden]{display:none}
-.btn-sw{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;background:var(--surf);color:var(--ac-ink);border:2px solid var(--ac);border-radius:14px;font-weight:700;font-size:15px;text-decoration:none;transition:background-color .2s,color .2s,transform .15s,box-shadow .2s}
-.btn-sw:hover{background:var(--ac);color:var(--on-ac);box-shadow:var(--shadow-lg);transform:translateY(-1px)}
-.btn-sw:active{transform:scale(.97)}
 
 /* progreso */
 .progreso-title{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
@@ -301,6 +301,22 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
         @media (prefers-reduced-motion:reduce){
           .chip,.lib-btn{transition:none!important}
         }
+        /* ===== Rediseño v3: tipografía, anillo de progreso y ajustes visuales (sin cambios de lógica) ===== */
+        body{font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+        .hero h1,.dia h2,.name,.num,.sr b,.detalle-valor,.lib-head h2,.footer h3,.prog-pct,.hero-tag{font-family:'Space Grotesk',system-ui,sans-serif}
+        .hero{border-radius:28px}
+        .hero h1{font-weight:700;letter-spacing:-.02em}
+        .dia{border-radius:24px}
+        .dia h2{font-weight:700;letter-spacing:-.01em}
+        .card{border-radius:22px}
+        .name{font-weight:700;letter-spacing:-.01em}
+        .num,.sr b,.detalle-valor{font-weight:700}
+        .ring{position:relative;width:88px;height:88px;flex:none}
+        .ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+        .ring .track{fill:none;stroke:var(--ac-soft)}
+        .ring .val{fill:none;stroke:var(--ac);stroke-linecap:round;transition:stroke-dashoffset .6s var(--ease)}
+        .ring span{position:absolute;inset:0;display:grid;place-items:center;font-family:'Space Grotesk',system-ui,sans-serif;font-weight:700;font-size:18px;color:var(--ac-ink)}
+        .dia-top{align-items:center}
     </style>
 </head>
 <body data-perfil="cris">
@@ -446,8 +462,7 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
                             <div class="frame sk"><img src="${m.i2}" alt="${m.n} - posición 2" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="mediaFail(this)"></div>
                         </div>
                     </div>
-                    <div class="media-fallback" role="status" hidden>⚠️ No se pudo cargar el video o las imágenes (necesitan internet y que SmartWorkout los permita). Usa el botón de abajo para verlos en su página.</div>
-                    <a href="${m.u}" target="_blank" rel="noopener noreferrer" class="btn-sw rip">🎬 Ver en SmartWorkout</a>
+                    <div class="media-fallback" role="status" hidden>⚠️ No se pudo cargar el video o las imágenes (necesitan internet y que SmartWorkout los permita).</div>
                 </div>`).join('');
         }
 
@@ -1012,8 +1027,7 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
             const vid = r[5] ? VID_SW + r[5] + '.mp4' : '';
             const url = LIB_URL[i];
             if (!img1 && !vid) {
-                return `<div class="media-fallback" role="status">Este ejercicio no tiene imagen ni video en SmartWorkout. Usa el botón para verlo en su página.</div>
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn-sw rip">🎬 Ver en SmartWorkout</a>`;
+                return `<div class="media-fallback" role="status">Este ejercicio no tiene imagen ni video disponible.</div>`;
             }
             return `
                 <div class="media-item">
@@ -1028,8 +1042,7 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
                             <div class="frame sk"><img src="${img2}" alt="${esc(r[1])} - posición 2" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="mediaFail(this)"></div>
                         </div>
                     </div>
-                    <div class="media-fallback" role="status" hidden>⚠️ No se pudo cargar el video o las imágenes (necesitan internet y que SmartWorkout los permita). Usa el botón de abajo para verlos en su página.</div>
-                    <a href="${url}" target="_blank" rel="noopener noreferrer" class="btn-sw rip">🎬 Ver en SmartWorkout</a>
+                    <div class="media-fallback" role="status" hidden>⚠️ No se pudo cargar el video o las imágenes (necesitan internet y que SmartWorkout los permita).</div>
                 </div>`;
         }
 
@@ -1218,10 +1231,10 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
                             <h2>${dia.titulo}</h2>
                             <p>⏱️ ${dia.duracion}</p>
                         </div>
+                        <div class="ring" role="progressbar" aria-label="Progreso del día" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${hechos}"><svg viewBox="0 0 104 104" aria-hidden="true"><circle class="track" cx="52" cy="52" r="46" stroke-width="10"/><circle class="val" cx="52" cy="52" r="46" stroke-width="10" stroke-dasharray="289.03" stroke-dashoffset="289.03" data-off="${(289.03 * (1 - pct / 100)).toFixed(2)}"/></svg><span>${pct}%</span></div>
                         <button class="tool rip" id="btnExpand" onclick="toggleTodos()"></button>
                     </div>
                     <div class="prog-row"><span><strong>${hechos} de ${total}</strong> ejercicios hechos</span><span class="prog-pct">${pct}%</span></div>
-                    <div class="bar" role="progressbar" aria-label="Progreso del día" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${hechos}"><i data-w="${pct}"></i></div>
                     ${hechos === total && total ? '<div class="dia-ok">🎉 ¡Día completo!</div>' : ''}
                 </section>`;
             const lista = dia.ejercicios.map((ej, i) => ({ ej, i })).filter(({ ej }) =>
@@ -1234,8 +1247,8 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
             container.innerHTML = html;
             if (anim) animar(container, 'in-' + anim);
             requestAnimationFrame(() => requestAnimationFrame(() => {
-                const b = container.querySelector('.bar i');
-                if (b) b.style.width = b.dataset.w + '%';
+                const v = container.querySelector('.ring .val');
+                if (v) v.style.strokeDashoffset = v.dataset.off;
             }));
             actualizarBtnExpandir();
         }
