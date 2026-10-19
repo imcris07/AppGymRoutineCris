@@ -280,7 +280,7 @@ button{font:inherit;color:inherit;cursor:pointer;-webkit-user-select:none;user-s
 @media(min-width:768px){.up-btn{bottom:24px;left:20px}}
 .tab .ts{display:none}
 .tab.es-hoy .tb:empty::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor}
-@media(min-width:768px) and (max-width:1100px){.tab .tl{display:none}.tab .ts{display:inline}}
+@media(min-width:768px){.tab .tl{display:none}.tab .ts{display:inline}.tabs-top .tab{padding:0 8px;gap:4px}}
 .tab{white-space:nowrap}
 .bn-item{min-width:0;padding:0 2px}
 .bn-item .bn-l{font-size:clamp(14px,4vw,16px);white-space:nowrap}
@@ -418,7 +418,9 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
         .lib-acc{display:grid;gap:10px;margin-top:14px;padding:12px;border:1.5px dashed var(--line);border-radius:16px;background:var(--surf2)}
         .lib-acc-ok{border-style:solid;border-color:color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 9%,var(--surf))}
         .lib-acc-ok-txt{font-weight:800;color:var(--ok);font-size:15px}
-        .lib-dias{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+        .lib-acc{grid-template-columns:minmax(0,1fr)}
+        .lib-dias{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;width:100%}
+        .lib-dia{padding:0 2px;min-width:0;white-space:nowrap}
         .lib-dia{min-height:44px;border:2px solid var(--line);border-radius:12px;background:var(--surf);color:var(--tx);font:inherit;font-weight:800;font-size:14px;cursor:pointer}
         .lib-dia.on{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
         .lib-acc-btn{width:100%;min-height:46px;padding:0 14px;border:2px solid var(--ac);border-radius:14px;background:var(--ac);color:var(--on-ac);font:inherit;font-weight:800;font-size:15px;box-shadow:var(--shadow);cursor:pointer}
@@ -852,14 +854,32 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
 
 <!--JS-GEN-->
     <script>
-/* Motor de rutinas (routine-engine-1.0.0) */
-/* Motor de rutinas (routine-engine-1.0.0). Funciones puras, sin DOM ni red.
- * Basado en la especificación maestra (Parte II). Los coeficientes son de producto,
- * provisionales y requieren revisión de un entrenador acreditado antes de uso general.
+/* Motor de rutinas (routine-engine-2.0.0). Funciones puras, sin DOM ni red.
+ * Propuesta v2 (BALKOR_FORGE_PROPUESTA_V2): planificación semanal, calendario por viabilidad,
+ * balance de días, duración realista, advertencias con código y metadatos con capa revisable.
+ * La puerta de seguridad (evaluarSeguridad) se conserva sin cambios; ver forge/v1 para la versión anterior.
+ * Los coeficientes de CONFIG son valores de producto provisionales: requieren revisión profesional.
  */
 const Motor = (() => {
-  const VERSION_ALGORITMO = 'routine-engine-1.0.0';
-  const VERSION_REGLAS = 'reglas-2026-10-borrador';
+  const VERSION_ALGORITMO = 'routine-engine-2.0.0';
+  const VERSION_REGLAS = 'reglas-2026-10-v2-propuesta';
+
+  // ---------- Configuración (valores provisionales, centralizados) ----------
+  const CONFIG = {
+    // Mientras no existan metadatos revisados, el plan se permite como borrador (draftUnverified).
+    // En producción debe ser false: solo se usan ejercicios con metadataStatus 'reviewed'.
+    allowUnreviewedForTesting: true,
+    maxSesionesPorNivel: { novato: 3, intermedio: 5, avanzado: 6 },   // se conserva de v1
+    maxSesionesRecuperacionMala: 3,                                    // se conserva de v1
+    minutosRango: [20, 120],
+    maxEjerciciosPorSesion: 14,                                        // límite técnico, no meta
+    seriesTrabajoSeg: 45,                                              // duración de una serie de trabajo
+    minutosCambio: 1,                                                  // cambio de máquina o carga por ejercicio
+    minutosCalentamiento: 5,
+    seriesExtraPrioridad: 2,                                           // propuesta v2: +2 series, no +15 %
+    toleranciaBalance: 0.20,                                           // diferencia de ocupación entre sesiones
+    pesos: { cobertura: 0.30, alineacion: 0.25, preferencia: 0.15, tiempo: 0.20, diversidad: 0.10 },
+  };
 
   // ---------- Vocabulario ----------
   const GRUPOS = ['pecho', 'espalda', 'hombros', 'biceps', 'triceps', 'cuadriceps', 'isquios', 'gluteos', 'gemelos', 'core'];
@@ -883,9 +903,32 @@ const Motor = (() => {
   };
   const PATRONES_RODILLA = ['squat', 'single_leg', 'knee_extension', 'knee_flexion', 'calf_raise'];
   const PATRONES_CADERA = ['hinge'];
+  const FAMILIAS_CUBIERTAS = {
+    empuje: ['horizontal_push', 'vertical_push'],
+    traccion: ['horizontal_pull', 'vertical_pull'],
+    rodilla: PATRONES_RODILLA,
+    cadera: PATRONES_CADERA,
+  };
+  const ETIQUETA_FAMILIA = { empuje: 'empuje', traccion: 'tracción', rodilla: 'rodilla', cadera: 'cadera' };
+
+  // Textos de advertencias por código (la lógica usa códigos; la interfaz muestra el texto)
+  const TEXTOS = {
+    FREQUENCY_REDUCED: (v) => `Frecuencia reducida a ${v.n} días por semana para tu nivel y recuperación.`,
+    LOW_FREQUENCY: () => 'Con un solo día el plan se adapta a tu tiempo; entrenar más días podría ampliar la cobertura.',
+    LEVEL_PROVISIONAL: () => 'Estimación de nivel provisional: tus respuestas no coinciden del todo. Se usó el nivel más conservador.',
+    RECOVERY_NOTE: (v) => `Recuperación reportada como ${v.x}: el plan es más conservador.`,
+    NO_ELIGIBLE: () => 'No hay ejercicios compatibles con el equipo y el nivel seleccionados.',
+    CATALOG_GAP: (v) => `Faltan ejercicios compatibles con tu equipo para ${v.x}.`,
+    COVERAGE_GAP: (v) => `Esta semana no cubre ${v.x} con el catálogo disponible.`,
+    VOLUME_SHORTFALL: (v) => `${v.x}: ${v.a} de ${v.o} series semanales (no se alcanzó con tu tiempo y equipo).`,
+    TIME_CONSTRAINT: (v) => `${v.x}: no cabe en ${v.m} minutos; el plan se redujo para respetar tu tiempo.`,
+    UNREVIEWED_METADATA: () => 'Metadatos de ejercicios no revisados por entrenador: plan en modo borrador.',
+    SESSION_EMPTY: (v) => `${v.x}: sin ejercicios compatibles con tu tiempo y equipo.`,
+  };
 
   // ---------- 1. Seguridad (prevalece sobre cualquier puntuación) ----------
   // Cada respuesta: 'si' | 'no' | 'nose' | 'prefiero' (S03) | 'primera' (S05)
+  // Sin cambios respecto de v1: ver forge/v1/motor-v1.js y forge/forge-v2.test.js.
   function evaluarSeguridad(c) {
     const motivos = [];
     const s = c.seguridad || {};
@@ -926,7 +969,7 @@ const Motor = (() => {
     return { nivel, provisional };
   }
 
-  // ---------- 3. Catálogo: metadatos heurísticos (no revisados) ----------
+  // ---------- 3. Catálogo: metadatos heurísticos + capa de metadatos revisados (overlay por id) ----------
   function metaDeEjercicio(fila) {
     const [cat, nombre, slug] = fila;
     const n = nombre.toLowerCase();
@@ -985,11 +1028,37 @@ const Motor = (() => {
       dificultad, apto: !noApto && !conflicto && patron !== 'otro' && patron !== 'wrist', metadatos: 'heuristico',
       familia: `${patron}|${grupo}|${equipo[0] || 'x'}`,
       categoriaTexto: cat, tipo: grupo === 'core' ? 'core' : compuesto ? 'compuesto' : 'aislamiento',
+      metadataStatus: 'heuristic', metadataVersion: null,
     };
   }
 
-  function catalogoConMeta(catalogo) {
-    return catalogo.map(metaDeEjercicio);
+  // Overlay: { [id]: { primaryMuscle, movementPattern, exerciseType, requiredEquipmentAll, difficulty, isEligible, metadataStatus, metadataVersion, ... } }
+  // Solo los campos presentes sustituyen a la heurística. 'reviewed' es el único estado que vuelve el ejercicio 'revisado'.
+  function aplicarOverlay(m, o) {
+    const equipoOverlay = Array.isArray(o.requiredEquipmentAll) ? o.requiredEquipmentAll : null;
+    const noSoportado = Array.isArray(o.requiredEquipmentAny) && o.requiredEquipmentAny.length > 0;
+    const revisado = o.metadataStatus === 'reviewed';
+    return {
+      ...m,
+      grupo: o.primaryMuscle || m.grupo,
+      patron: o.movementPattern || m.patron,
+      compuesto: o.exerciseType ? o.exerciseType === 'compuesto' : m.compuesto,
+      tipo: o.exerciseType || m.tipo,
+      equipo: equipoOverlay || m.equipo,
+      dificultad: o.difficulty || m.dificultad,
+      apto: o.isEligible !== false && o.metadataStatus !== 'rejected' && !noSoportado,
+      metadatos: revisado ? 'revisado' : 'heuristico',
+      metadataStatus: o.metadataStatus || 'heuristic',
+      metadataVersion: o.metadataVersion || null,
+    };
+  }
+
+  function catalogoConMeta(catalogo, overlay) {
+    return catalogo.map(fila => {
+      const m = metaDeEjercicio(fila);
+      const o = overlay && overlay[m.id];
+      return o ? aplicarOverlay(m, o) : m;
+    });
   }
 
   // ---------- 4. Parámetros por nivel y objetivo ----------
@@ -1004,9 +1073,7 @@ const Motor = (() => {
   const DESCANSO = { hipertrofia: { compuesto: 120, aislamiento: 75, core: 45 }, fuerza: { compuesto: 180, aislamiento: 90, core: 45 },
     salud: { compuesto: 90, aislamiento: 60, core: 45 }, resistencia: { compuesto: 60, aislamiento: 45, core: 30 } };
   const RIR = { novato: 3, intermedio: 2, avanzado: 2 };
-  const CALENTAMIENTO_MIN = 5;
-  const MIN_POR_SERIE = 0.75;   // 45 s de ejecución
-  const MIN_SETUP = 1;          // cambio de máquina/carga por ejercicio
+  const RIR_CONSERVADOR = 3;
 
   function sesionesPorSemana(dias) {
     const d = Math.max(1, Math.min(6, dias));
@@ -1017,161 +1084,250 @@ const Motor = (() => {
     return esquema[d];
   }
 
-  function diasElegidos(n, dias) {
-    if (dias && dias.length >= n) return [...dias].sort((a, b) => a - b).slice(0, n);
-    return Array.from({ length: n }, (_, i) => Math.round(i * 7 / n));
+  // Días pedidos por la persona: únicos, ordenados, de 0 (lunes) a 6 (domingo)
+  // Sin días marcados (entradas antiguas), reparte diasPorSemana de forma uniforme, como en v1
+  function diasPedidos(c) {
+    const lista = [...new Set((c.diasSemana || []).map(Number).filter(d => d >= 0 && d <= 6))].sort((a, b) => a - b);
+    if (lista.length) return lista;
+    const k = Math.max(1, Math.min(7, Number(c.diasPorSemana) || 3));
+    return Array.from({ length: k }, (_, i) => Math.round(i * 7 / k));
   }
 
-  function tiempoEjercicio(ej, series, descanso) {
-    return MIN_SETUP + series * MIN_POR_SERIE + Math.max(0, series - 1) * (descanso / 60);
+  // Elige n de los días pedidos: primero menos días seguidos, luego mayor separación mínima, luego orden estable
+  function elegirCalendario(dias, n) {
+    const combos = [];
+    (function rec(inicio, camino) {
+      if (camino.length === n) { combos.push(camino.slice()); return; }
+      for (let i = inicio; i < dias.length; i++) { camino.push(dias[i]); rec(i + 1, camino); camino.pop(); }
+    })(0, []);
+    const medir = cal => {
+      let adyacentes = 0, separacion = 7;
+      for (let i = 1; i < cal.length; i++) {
+        const g = cal[i] - cal[i - 1];
+        if (g === 1) adyacentes++;
+        separacion = Math.min(separacion, g);
+      }
+      return { adyacentes, separacion: cal.length > 1 ? separacion : 7 };
+    };
+    combos.sort((a, b) => {
+      const ma = medir(a), mb = medir(b);
+      return (ma.adyacentes - mb.adyacentes) || (mb.separacion - ma.separacion) || a.join(',').localeCompare(b.join(','));
+    });
+    return combos[0] || dias.slice(0, n);
   }
 
-  // ---------- 5. Generación determinista ----------
+  function tiempoEjercicio(series, descanso) {
+    const serie = CONFIG.seriesTrabajoSeg / 60;
+    return CONFIG.minutosCambio + series * serie + Math.max(0, series - 1) * (descanso / 60);
+  }
+
+  function seriesPara(nivel, tipo, conservador) {
+    const base = SERIES[nivel][tipo];
+    if (!conservador) return base;
+    return tipo === 'compuesto' ? Math.min(base, 3) : 2; // dosificación inicial baja (propuesta v2, §6.3)
+  }
+
+  function repsPara(nivel, objetivo, tipo) {
+    // Propuesta v2: novato con fuerza empieza en 6–10 en compuestos, no en 3–6 pesadas
+    if (nivel === 'novato' && objetivo === 'fuerza' && tipo === 'compuesto') return [6, 10];
+    if (nivel === 'novato' && objetivo !== 'fuerza') return tipo === 'compuesto' ? [8, 12] : [10, 15];
+    return (REPS[objetivo] || REPS.salud)[tipo];
+  }
+
+  // ---------- 5. Elegibilidad ----------
   function puedeUsar(ej, eqUsuario, nivel, objetivo, excluidos) {
     if (!ej.apto) return false;
     if (ej.grupo === 'antebrazos' || ej.grupo === 'otro') return false;
     if (ej.metadatos !== 'revisado' && !excluidos.permitirNoRevisados) return false;
-    if (ej.dificultad > (nivel === 'novato' ? 2 : 3)) return false; // novato: compuestos básicos; avanzado: sin límite de dificultad
+    if (ej.dificultad > (nivel === 'novato' ? 2 : 3)) return false;      // novato: compuestos básicos; resto: sin límite práctico
     if (!ej.equipo.every(e => e === 'peso_corporal' || eqUsuario.includes(e))) return false;
     if (excluidos.ids.includes(ej.id)) return false;
     return true;
   }
 
+  function minutosDelDia(c, diaSemana, minutosBase) {
+    const v = c.minutosPorDia && Number(c.minutosPorDia[diaSemana]);
+    const m = v || minutosBase;
+    return Math.max(CONFIG.minutosRango[0], Math.min(CONFIG.minutosRango[1], m));
+  }
+
+  // ---------- 6. Generación semanal ----------
+  // Llena una sesión con ejercicios. modo 'cuota': avanza hacia la cuota de la sesión;
+  // modo 'relleno': usa el tiempo libre para acercar grupos todavía por debajo de su objetivo semanal.
+  function llenarSesion(s, ctx, modo) {
+    const { meta, nivel, objetivo, prioridades, preferidos, conservador, asignado, objetivoGrupo, usoPatron } = ctx;
+    const pesos = CONFIG.pesos;
+    for (let iter = 0; iter < CONFIG.maxEjerciciosPorSesion; iter++) {
+      const pendientes = s.grupos
+        .map(g => ({ g, falta: modo === 'cuota' ? s.cuota[g] - asignado[g] : objetivoGrupo[g] - asignado[g] }))
+        .filter(x => x.falta > 0)
+        .sort((a, b) => b.falta - a.falta || GRUPOS.indexOf(a.g) - GRUPOS.indexOf(b.g));
+      if (!pendientes.length) break;
+      let elegido = null;
+      for (const { g, falta } of pendientes) {
+        const restante = s.presupuesto - s.usado;
+        const candidatos = meta.filter(ej => ej.grupo === g && !s.familias.has(ej.familia) && !s.elegidos.some(x => x.id === ej.id) &&
+          // máximo 2 ejercicios del mismo patrón y grupo por sesión: evita variantes casi idénticas
+          s.elegidos.filter(x => x.patron === ej.patron && x.grupo === g).length < 2);
+        const puntuados = candidatos.map(ej => {
+          const tipoEj = ej.tipo === 'core' ? 'core' : ej.compuesto ? 'compuesto' : 'aislamiento';
+          const series = seriesPara(nivel, tipoEj, conservador);
+          const desc = DESCANSO[objetivo][tipoEj];
+          const t = tiempoEjercicio(series, desc);
+          if (t > restante + 1e-9) return null;                          // restricción dura: el tiempo no se negocia
+          if (modo === 'relleno' && asignado[g] + series > objetivoGrupo[g]) return null; // relleno no pasa del objetivo
+          const cobertura = Math.min(100, (falta / objetivoGrupo[g]) * 100);
+          let alineacion = ej.compuesto && (objetivo === 'fuerza' || objetivo === 'hipertrofia') ? 90 : 70;
+          if (conservador && ej.dificultad >= 2) alineacion -= 20;      // preferir baja complejidad al empezar
+          const pref = prioridades.includes(g) || preferidos.includes(ej.id) ? 100 : 50;
+          const tiempo = 100 * (1 - (restante - t) / s.presupuesto);     // favorece llenar bien el presupuesto
+          const repeticionSemana = usoPatron[ej.patron] || 0;
+          const diversidad = Math.min(s.patrones.has(ej.patron) ? 40 : 100, repeticionSemana >= 3 ? 50 : repeticionSemana >= 2 ? 75 : 100);
+          const score = pesos.cobertura * cobertura + pesos.alineacion * alineacion + pesos.preferencia * pref +
+            pesos.tiempo * tiempo + pesos.diversidad * diversidad;
+          return { ej, t, series, desc, tipoEj, score };
+        }).filter(Boolean)
+          .sort((a, b) => b.score - a.score || a.ej.id.localeCompare(b.ej.id));
+        if (puntuados.length) { elegido = { ...puntuados[0], grupoObjetivo: g, falta }; break; }
+      }
+      if (!elegido) break;
+      const { ej, t, series, desc, tipoEj, grupoObjetivo } = elegido;
+      const [rmin, rmax] = repsPara(nivel, objetivo, tipoEj);
+      s.elegidos.push({
+        id: ej.id, nombre: ej.nombre, grupo: grupoObjetivo, patron: ej.patron, tipo: tipoEj,
+        series, repMin: rmin, repMax: rmax, rir: conservador ? RIR_CONSERVADOR : RIR[nivel], descanso: desc,
+        minutos: Math.round(t * 10) / 10, familia: ej.familia, dificultad: ej.dificultad,
+        metadatos: ej.metadatos, metadataStatus: ej.metadataStatus,
+        motivo: `Trabaja ${ETIQUETA_GRUPO[grupoObjetivo].toLowerCase()} (faltaban ${elegido.falta} series)` +
+          (ej.compuesto ? '; ejercicio multiarticular' : '') + '.',
+      });
+      s.usado += t;
+      asignado[grupoObjetivo] += series;
+      s.patrones.add(ej.patron);
+      s.familias.add(ej.familia);
+      usoPatron[ej.patron] = (usoPatron[ej.patron] || 0) + 1;
+    }
+  }
+
   function generarRutina(entrada, catalogo) {
     const c = entrada;
     const seg = evaluarSeguridad(c);
-    const base = { algoritmo: VERSION_ALGORITMO, reglas: VERSION_REGLAS, catalogo: '2026-10', seguridad: seg, advertencias: [], explicaciones: [], dias: [], volumen: {}, minutosPorSesion: [] };
+    const base = { algoritmo: VERSION_ALGORITMO, reglas: VERSION_REGLAS, catalogo: '2026-10', seguridad: seg,
+      advertencias: [], codigos: [], explicaciones: [], dias: [], volumen: {}, minutosPorSesion: [], draftUnverified: false };
     if (seg.estado === 'INCOMPLETE') return { ...base, estado: 'invalid' };
     if (seg.estado === 'BLOCK_AND_REFER') return { ...base, estado: 'blocked' };
     if (seg.estado === 'REQUIRES_REVIEW') return { ...base, estado: 'review_required' };
 
+    const aviso = (codigo, v = {}) => { base.codigos.push(codigo); base.advertencias.push(TEXTOS[codigo](v)); };
+
     const { nivel, provisional } = estimarNivel(c);
-    if (provisional) base.advertencias.push('Estimación de nivel provisional: tus respuestas no coinciden del todo. Se usó el nivel más conservador.');
-    if (c.recuperacion === 'mala' || c.recuperacion === 'variable') base.advertencias.push('Recuperación reportada como ' + c.recuperacion + ': el plan es más conservador.');
+    const conservador = seg.estado === 'READY_CONSERVATIVE';
+    if (provisional) aviso('LEVEL_PROVISIONAL');
+    if (c.recuperacion === 'mala' || c.recuperacion === 'variable') aviso('RECOVERY_NOTE', { x: c.recuperacion });
 
-    const tope = nivel === 'novato' ? 3 : nivel === 'intermedio' ? 5 : 6;
-    let dias = Math.min(Number(c.diasPorSemana) || 3, tope);
-    if (c.recuperacion === 'mala') dias = Math.min(dias, 3);
-    if (dias < (Number(c.diasPorSemana) || 3)) base.advertencias.push(`Frecuencia reducida a ${dias} días por semana para tu nivel y recuperación.`);
+    // Calendario: días marcados, sin superar topes; nunca días fuera de la selección
+    const pedidos = diasPedidos(c);
+    const tope = Math.min(CONFIG.maxSesionesPorNivel[nivel], c.recuperacion === 'mala' ? CONFIG.maxSesionesRecuperacionMala : 99);
+    const n = Math.min(pedidos.length, tope);
+    if (n < pedidos.length) aviso('FREQUENCY_REDUCED', { n });
+    if (pedidos.length === 1) aviso('LOW_FREQUENCY');
+    const calendario = elegirCalendario(pedidos, n);
+    const adyacentes = calendario.some((d, i) => i > 0 && d - calendario[i - 1] === 1);
+    if (adyacentes && (conservador || c.recuperacion !== 'buena')) {
+      base.explicaciones.push('Hay días seguidos: distribuimos el esfuerzo para no repetir sesiones exigentes en días consecutivos.');
+    }
 
-    const minutos = Math.max(20, Math.min(120, Number(c.minutos) || 60));
+    const minutosBase = Math.max(CONFIG.minutosRango[0], Math.min(CONFIG.minutosRango[1], Number(c.minutos) || 60));
     const objetivo = c.objetivo || 'salud';
     const eq = c.equipo && c.equipo.length ? c.equipo : ['peso_corporal'];
-    const excluidos = { ids: c.excluirIds || [], permitirNoRevisados: c.permitirNoRevisados !== false };
+    const excluidos = {
+      ids: c.excluirIds || [],
+      permitirNoRevisados: c.permitirNoRevisados !== false && CONFIG.allowUnreviewedForTesting,
+    };
     const meta = catalogo.filter(ej => puedeUsar(ej, eq, nivel, objetivo, excluidos));
     if (!meta.length) {
-      base.advertencias.push('No hay ejercicios compatibles con el equipo y el nivel seleccionados.');
+      aviso('NO_ELIGIBLE');
       return { ...base, estado: 'partial_plan' };
     }
 
-    // objetivo de series directas por grupo
+    // Volumen deseado por grupo; prioridades suman series extra (propuesta v2)
     const objetivoGrupo = {};
     GRUPOS.forEach(g => { objetivoGrupo[g] = VOLUMEN_BASE[nivel]; });
     const prioridades = (c.prioridades || []).filter(g => GRUPOS.includes(g)).slice(0, 2);
-    prioridades.forEach(g => { objetivoGrupo[g] = Math.min(16, Math.round(VOLUMEN_BASE[nivel] * 1.15)); });
+    prioridades.forEach(g => { objetivoGrupo[g] = Math.min(16, VOLUMEN_BASE[nivel] + CONFIG.seriesExtraPrioridad); });
+    const preferidos = Array.isArray(c.preferidos) ? c.preferidos : [];
     const asignado = {};
     GRUPOS.forEach(g => { asignado[g] = 0; });
+    const usoPatron = {};
 
-    const esquema = sesionesPorSemana(dias);
-    const diasSem = diasElegidos(esquema.length, c.diasSemana);
-    const semana = [];
-    const usoPatronSemana = {};
-    const familiasSemana = new Set();
-    const repsCfg = REPS[objetivo] || REPS.salud;
-
-    const sesionesDeGrupo = {};
-    const vistasDeGrupo = {};
+    // Cuotas por sesión: el volumen de cada grupo se reparte entre las sesiones donde aparece
+    const esquema = sesionesPorSemana(n);
+    const sesionesDeGrupo = {}, vistasDeGrupo = {};
     GRUPOS.forEach(g => { sesionesDeGrupo[g] = esquema.filter(t => SESIONES[t].includes(g)).length; vistasDeGrupo[g] = 0; });
-    esquema.forEach((tipo, idxSesion) => {
-      const presupuesto = minutos - CALENTAMIENTO_MIN;
-      let tiempoUsado = 0;
-      const elegidos = [];
-      const patronesSesion = new Set();
-      const famSesion = new Set();
-      const grupos = SESIONES[tipo];
+    const sesiones = esquema.map((tipo, idx) => {
+      const diaSemana = calendario[idx];
+      const minutos = minutosDelDia(c, diaSemana, minutosBase);
       const cuota = {};
-      grupos.forEach(g => { vistasDeGrupo[g]++; cuota[g] = Math.round(objetivoGrupo[g] * vistasDeGrupo[g] / sesionesDeGrupo[g]); });
-
-      for (let iter = 0; iter < 14; iter++) {
-        const pendientes = grupos
-          .map(g => ({ g, falta: cuota[g] - asignado[g] }))
-          .filter(x => x.falta > 0)
-          .sort((a, b) => b.falta - a.falta || GRUPOS.indexOf(a.g) - GRUPOS.indexOf(b.g));
-        if (!pendientes.length) break;
-        let elegido = null;
-        for (const { g, falta } of pendientes) {
-          const candidatos = meta.filter(ej => ej.grupo === g && !famSesion.has(ej.familia) &&
-            !elegidos.some(x => x.id === ej.id) && (usoPatronSemana[ej.patron] || 0) < 2);
-          const puntuados = candidatos.map(ej => {
-            const tipoEj = ej.tipo === 'core' ? 'core' : ej.compuesto ? 'compuesto' : 'aislamiento';
-            const series = SERIES[nivel][tipoEj];
-            const desc = DESCANSO[objetivo][tipoEj];
-            const t = tiempoEjercicio(ej, series, desc);
-            const cabe = tiempoUsado + t <= presupuesto ? 100 : 0;
-            const cobertura = Math.min(100, (falta / objetivoGrupo[g]) * 100);
-            const diversidad = patronesSesion.has(ej.patron) ? 40 : 100;
-            const alineacion = ej.compuesto && (objetivo === 'fuerza' || objetivo === 'hipertrofia') ? 90 : 70;
-            const pref = prioridades.includes(g) ? 100 : 50;
-            const score = 0.30 * alineacion + 0.25 * cobertura + 0.20 * pref + 0.15 * cabe + 0.10 * diversidad;
-            return { ej, t, series, desc, tipoEj, score, cabe };
-          }).filter(x => x.cabe > 0)
-            .sort((a, b) => b.score - a.score || a.ej.id.localeCompare(b.ej.id));
-          if (puntuados.length) { elegido = { ...puntuados[0], grupoObjetivo: g, falta }; break; }
-        }
-        if (!elegido) break;
-        const { ej, t, series, desc, tipoEj, grupoObjetivo } = elegido;
-        const [rmin, rmax] = nivel === 'novato' && objetivo !== 'fuerza' ? (tipoEj === 'compuesto' ? [8, 12] : [10, 15]) : repsCfg[tipoEj];
-        elegidos.push({
-          id: ej.id, nombre: ej.nombre, grupo: grupoObjetivo, patron: ej.patron, tipo: tipoEj,
-          series, repMin: rmin, repMax: rmax, rir: RIR[nivel], descanso: desc,
-          minutos: Math.round(t * 10) / 10, familia: ej.familia,
-          motivo: `Trabaja ${ETIQUETA_GRUPO[grupoObjetivo].toLowerCase()} (faltaban ${elegido.falta} series)` +
-            (ej.compuesto ? '; ejercicio multiarticular' : '') + '.',
-        });
-        tiempoUsado += t;
-        asignado[grupoObjetivo] += series;
-        patronesSesion.add(ej.patron);
-        famSesion.add(ej.familia);
-        familiasSemana.add(ej.familia);
-        usoPatronSemana[ej.patron] = (usoPatronSemana[ej.patron] || 0) + 1;
-      }
-      const etiqueta = { full: 'Cuerpo completo', upper: 'Tren superior', lower: 'Tren inferior', push: 'Empuje', pull: 'Tirón', legs: 'Piernas' }[tipo];
-      semana.push({
-        clave: DIAS_CLAVE[idxSesion], titulo: `${etiqueta} ${String.fromCharCode(65 + idxSesion)}`,
-        diaSemana: diasSem[idxSesion], ejercicios: elegidos, minutos: Math.round(tiempoUsado + CALENTAMIENTO_MIN),
-      });
-      base.minutosPorSesion.push(Math.round(tiempoUsado + CALENTAMIENTO_MIN));
-      if (tiempoUsado + CALENTAMIENTO_MIN > minutos + 0.01) base.advertencias.push('Una sesión supera el tiempo disponible.');
+      SESIONES[tipo].forEach(g => { vistasDeGrupo[g]++; cuota[g] = Math.round(objetivoGrupo[g] * vistasDeGrupo[g] / sesionesDeGrupo[g]); });
+      return { tipo, idx, diaSemana, minutos, presupuesto: minutos - CONFIG.minutosCalentamiento, usado: 0,
+        grupos: SESIONES[tipo], cuota, elegidos: [], patrones: new Set(), familias: new Set() };
     });
 
-    // Cobertura de patrones básicos
-    semana.forEach(d => {
-      const pats = d.ejercicios.map(e => e.patron);
-      if (['upper', 'push', 'pull', 'full'].includes(esquema[semana.indexOf(d)]) && !pats.some(p => /push|pull/.test(p))) {
-        base.advertencias.push(`${d.titulo}: sin ejercicios de empuje o tirón compatibles con tu equipo.`);
-      }
-    });
-    const hayRodilla = semana.some(d => d.ejercicios.some(e => PATRONES_RODILLA.includes(e.patron)));
-    const hayCadera = semana.some(d => d.ejercicios.some(e => PATRONES_CADERA.includes(e.patron)));
-    if (!hayRodilla) base.advertencias.push('No se encontró ningún ejercicio de rodilla compatible con tu equipo.');
-    if (!hayCadera) base.advertencias.push('No se encontró ningún ejercicio de cadera compatible con tu equipo.');
+    const ctx = { meta, nivel, objetivo, prioridades, preferidos, conservador, asignado, objetivoGrupo, usoPatron };
+    sesiones.forEach(s => llenarSesion(s, ctx, 'cuota'));
+    // Repaso de balance: el tiempo libre de cada sesión se usa solo para grupos aún por debajo de su objetivo
+    sesiones.forEach(s => { if (s.presupuesto - s.usado > 0.5) llenarSesion(s, ctx, 'relleno'); });
 
-    // Volumen y calidad
+    const semana = sesiones.map(s => ({
+      clave: DIAS_CLAVE[s.idx],
+      titulo: `${{ full: 'Cuerpo completo', upper: 'Tren superior', lower: 'Tren inferior', push: 'Empuje', pull: 'Tirón', legs: 'Piernas' }[s.tipo]} ${String.fromCharCode(65 + s.idx)}`,
+      diaSemana: s.diaSemana, ejercicios: s.elegidos, minutos: Math.round(s.usado + CONFIG.minutosCalentamiento),
+    }));
+    base.minutosPorSesion = semana.map(d => d.minutos);
+
+    // Validaciones finales
+    const vacias = sesiones.filter(s => !s.elegidos.length);
+    vacias.forEach(s => aviso('SESSION_EMPTY', { x: DIA_TEXTO[s.diaSemana] }));
+    if (sesiones.some(s => s.usado > s.presupuesto + 1e-9)) aviso('TIME_CONSTRAINT', { x: 'Una sesión', m: minutosBase });
+
+    const todos = semana.flatMap(d => d.ejercicios);
+    const familiasSinCatalogo = Object.keys(FAMILIAS_CUBIERTAS).filter(f => !meta.some(e => FAMILIAS_CUBIERTAS[f].includes(e.patron)));
+    const familiasSinCobertura = Object.keys(FAMILIAS_CUBIERTAS).filter(f => !familiasSinCatalogo.includes(f) && !todos.some(e => FAMILIAS_CUBIERTAS[f].includes(e.patron)));
+    familiasSinCatalogo.forEach(f => aviso('CATALOG_GAP', { x: ETIQUETA_FAMILIA[f] }));
+    familiasSinCobertura.forEach(f => aviso('COVERAGE_GAP', { x: ETIQUETA_FAMILIA[f] }));
+
+    // Volumen y explicaciones de balance
     let totalObj = 0, totalAsig = 0;
     GRUPOS.forEach(g => {
-      base.volumen[g] = { objetivo: objetivoGrupo[g], asignado: asignado[g] };
+      base.volumen[g] = { objetivo: objetivoGrupo[g], deseado: objetivoGrupo[g], asignado: asignado[g] };
       totalObj += objetivoGrupo[g]; totalAsig += Math.min(asignado[g], objetivoGrupo[g]);
-      if (asignado[g] < objetivoGrupo[g] * 0.8) base.advertencias.push(`${ETIQUETA_GRUPO[g]}: ${asignado[g]} de ${objetivoGrupo[g]} series semanales (no se alcanzó con tu tiempo y equipo).`);
+      if (asignado[g] < objetivoGrupo[g] * 0.8) aviso('VOLUME_SHORTFALL', { x: ETIQUETA_GRUPO[g], a: asignado[g], o: objetivoGrupo[g] });
     });
-    if (base.minutosPorSesion.some(m => m >= minutos)) base.explicaciones.push('El tiempo por sesión está al límite: si necesitas más volumen, aumenta minutos o días.');
-    base.explicaciones.push(`Nivel estimado: ${nivel}. Objetivo: ${objetivo}. Días: ${dias}. Tiempo por sesión: ${minutos} min.`);
-    if (meta.some(e => e.metadatos !== 'revisado')) base.advertencias.push('Metadatos de ejercicios no revisados por entrenador: plan en modo borrador.');
+    const ocupaciones = sesiones.map(s => s.usado / s.presupuesto);
+    if (ocupaciones.length > 1 && Math.max(...ocupaciones) - Math.min(...ocupaciones) > CONFIG.toleranciaBalance) {
+      base.explicaciones.push('Las sesiones tienen tiempos de uso distintos: el plan repartió el trabajo lo mejor posible con tu equipo y tiempo.');
+    }
+    if (sesiones.some(s => s.presupuesto > 0 && s.usado / s.presupuesto >= 0.95)) {
+      base.explicaciones.push('El tiempo por sesión está al límite: si necesitas más volumen, aumenta minutos o días.');
+    }
+    if (n >= 6) base.explicaciones.push('Con 6 o más sesiones por semana, la recuperación pesa más: incluye al menos un día de descanso completo o actividad suave, y baja la carga si notas fatiga acumulada.');
+    if (conservador) base.explicaciones.push('Preparación conservadora: el plan empieza con series y esfuerzo moderados para que evalúes tu respuesta antes de subir.');
+    base.explicaciones.push(`Nivel estimado: ${nivel}. Objetivo: ${objetivo}. Días: ${n}. Tiempo por sesión: ${minutosBase} min.`);
 
-    const estado = (semana.every(d => d.ejercicios.length > 0) && totalAsig >= totalObj * 0.6) ? 'generated' : 'partial_plan';
-    return { ...base, estado, nivel, dias: semana, objetivo };
+    // Metadatos: si algún ejercicio elegido no está revisado, el plan es borrador
+    if (todos.some(e => e.metadatos !== 'revisado')) {
+      base.draftUnverified = true;
+      aviso('UNREVIEWED_METADATA');
+    }
+
+    // Estado: 'generated' solo si todas las sesiones tienen ejercicios, no hay huecos de catálogo ni de cobertura
+    const estado = !vacias.length && !familiasSinCatalogo.length && !familiasSinCobertura.length && totalAsig > 0 ? 'generated' : 'partial_plan';
+    return { ...base, estado, nivel, readiness: seg.estado, dias: semana, objetivo, nDias: n, calendario };
   }
 
-  // ---------- 6. Progresión doble (propuesta, nunca impuesta) ----------
+  const DIA_TEXTO = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+  // ---------- 7. Progresión doble (propuesta, nunca impuesta) ----------
   // series: [{ peso, reps, rir, dolor }]  ·  ej: { repMin, repMax, rir, paso }
   function progresion(ej, series) {
     if (!series || !series.length) return { accion: 'sin_datos', motivo: 'Sin registros: calibra la carga por sensación y RIR.' };
@@ -1186,7 +1342,8 @@ const Motor = (() => {
     return { accion: 'revisar', motivo: 'Bajaron las repeticiones: revisa sueño, descanso y técnica antes de cambiar la carga.' };
   }
 
-  return { generarRutina, evaluarSeguridad, estimarNivel, catalogoConMeta, metaDeEjercicio, progresion,
+  return { generarRutina, evaluarSeguridad, estimarNivel, catalogoConMeta, metaDeEjercicio, aplicarOverlay, progresion,
+    elegirCalendario, diasPedidos, sesionesPorSemana, CONFIG,
     VERSION_ALGORITMO, VERSION_REGLAS, GRUPOS, EQUIPOS, ETIQUETA_GRUPO, SESIONES, RESTRICCION_EQUIPO };
 })();
 
@@ -1284,7 +1441,7 @@ function radios(nombre, opciones) {
 function selectOpts(opciones) {
   return opciones.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
 }
-const DIA_NOMBRE = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+const DIA_NOMBRE = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 // Descripción breve de cada pregunta del generador
 const PISTA_SEG = {
@@ -1303,7 +1460,7 @@ const PISTAS = {
   genRecuperacion: 'Cómo te sientes al día siguiente de entrenar: sin molestias (buena), a veces cansado (variable) o casi siempre agotado (mala).',
   genObjetivo: 'Cambia cómo se reparten las series y las repeticiones. Hipertrofia = más músculo; fuerza = cargas altas; salud = equilibrio general.',
   prio: 'Opcional. Si eliges uno o dos grupos, el plan les dedica más series.',
-  diaSem: 'Marca los días de la semana en que vas a entrenar. El número de días sale de tu selección.',
+  diaSem: 'Marca los días en que vas a entrenar, incluido sábado y domingo si aplica. El número de días sale de tu selección.',
   genMinutos: 'Tiempo aproximado por sesión, incluido el calentamiento.',
   equipo: 'Marca solo lo que tienes de verdad. El plan no usará nada que no marques.',
 };
@@ -1325,15 +1482,12 @@ function ponerPistas() {
     const r = f.querySelector(`input[name="${k}"]`);
     if (r) leyenda(r).after(pista(PISTA_SEG[k]));
   });
-  // Los días por semana se toman de la selección de días; el selector queda oculto
-  document.getElementById('genDias').closest('label').hidden = true;
   f.querySelectorAll('input[name=diaSem]').forEach(cb => cb.addEventListener('change', sincronizarDias));
   sincronizarDias();
 }
 
 function sincronizarDias() {
   const n = document.querySelectorAll('#formGen input[name=diaSem]:checked').length;
-  if (n >= 1) document.getElementById('genDias').value = String(n);
   let t = document.getElementById('genDiasTexto');
   if (!t) {
     t = document.createElement('p');
@@ -1368,9 +1522,8 @@ function construirFormulario() {
     <fieldset class="paso" data-paso="3" hidden><legend class="paso-titulo">3. Objetivo y tiempo</legend>
       <label class="campo-l">Objetivo principal<select id="genObjetivo">${selectOpts(Object.entries({ hipertrofia: 'Hipertrofia (músculo)', fuerza: 'Fuerza', salud: 'Salud general', resistencia: 'Resistencia muscular' }))}</select></label>
       <fieldset class="preg"><legend>¿Qué músculos quieres priorizar? (máximo 2, opcional)</legend><div class="opciones">${grupos}</div></fieldset>
-      <label class="campo-l">Días por semana<select id="genDias">${selectOpts([1, 2, 3, 4, 5].map(n => [String(n), n + (n === 1 ? ' día' : ' días')]))}</select></label>
-      <fieldset class="preg"><legend>¿Qué días entrenas? (elige tantos como días por semana)</legend><div class="opciones">${['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].map((n, i) => `<label class="opc"><input type="checkbox" name="diaSem" value="${i}" ${[0, 2, 4].includes(i) ? 'checked' : ''}> <span>${n}</span></label>`).join('')}</div><p class="lib-sub" id="genDiasAviso" role="alert" hidden></p></fieldset>
-      <p class="lib-sub">Si tu nivel resulta principiante, el plan recomienda hasta 3 días.</p>
+      <fieldset class="preg"><legend>¿Qué días entrenas?</legend><div class="opciones">${DIA_NOMBRE.map((n, i) => `<label class="opc"><input type="checkbox" name="diaSem" value="${i}" ${[0, 2, 4].includes(i) ? 'checked' : ''}> <span>${n}</span></label>`).join('')}</div><p class="lib-sub" id="genDiasAviso" role="alert" hidden></p></fieldset>
+      <p class="lib-sub">Puedes elegir de 1 a 7 días. Si tu nivel resulta principiante, el plan recomienda hasta 3 días.</p>
       <label class="campo-l">Minutos por sesión<select id="genMinutos">${selectOpts([20, 30, 40, 50, 60, 70, 80, 90, 100, 120].map(n => [String(n), n + ' min']))}</select></label>
     </fieldset>
     <fieldset class="paso" data-paso="4" hidden><legend class="paso-titulo">4. Equipo disponible</legend>
@@ -1385,7 +1538,6 @@ function construirFormulario() {
   $('genTecnica').value = '3';
   $('genExperiencia').value = '4-12';
   $('genRecuperacion').value = 'buena';
-  $('genDias').value = '3';
   $('genObjetivo').value = 'salud';
   ponerPistas();
 }
@@ -1410,6 +1562,8 @@ function leerFormulario() {
   const seguridad = {};
   PREGUNTAS_SEGURIDAD.forEach(([k]) => { seguridad[k] = valorRadio(k); });
   const edad = document.getElementById('genEdad').value;
+  // Los días por semana son los días marcados: no hay un selector aparte
+  const diasSemana = [...document.querySelectorAll('#formGen input[name=diaSem]:checked')].map(e => Number(e.value)).sort((a, b) => a - b);
   return {
     edad: edad === '' ? undefined : Number(edad),
     experiencia: document.getElementById('genExperiencia').value,
@@ -1419,8 +1573,8 @@ function leerFormulario() {
     recuperacion: document.getElementById('genRecuperacion').value,
     objetivo: document.getElementById('genObjetivo').value,
     prioridades: [...document.querySelectorAll('#formGen input[name=prio]:checked')].map(e => e.value).slice(0, 2),
-    diasPorSemana: Number(document.getElementById('genDias').value),
-    diasSemana: [...document.querySelectorAll('#formGen input[name=diaSem]:checked')].map(e => Number(e.value)).sort((a, b) => a - b),
+    diasPorSemana: diasSemana.length,
+    diasSemana,
     minutos: Number(document.getElementById('genMinutos').value),
     equipo: [...document.querySelectorAll('#formGen input[name=equipo]:checked')].map(e => e.value),
     seguridad,
@@ -1430,7 +1584,6 @@ function leerFormulario() {
 
 function siguientePaso() {
   if (pasoActual === 3) {
-    const nDias = Number(document.getElementById('genDias').value);
     const n = document.querySelectorAll('#formGen input[name=diaSem]:checked').length;
     const aviso = document.getElementById('genDiasAviso');
     if (n < 1) { aviso.textContent = 'Elige al menos un día de la semana.'; aviso.hidden = false; return; }
@@ -1556,7 +1709,7 @@ function renderPlan() {
       <div class="prog-row"><span><strong>${hechosDiaPlan(d)} de ${d.ejercicios.length}</strong> ejercicios hechos</span></div>
       ${d.ejercicios.map((e, i) => cardPlanHTML(e, i, d.clave)).join('')}
     </section>`).join('');
-  c.innerHTML = (p.dias.some(d => !(d.diaSemana >= 0 && d.diaSemana <= 4)) ? '<div class="res-aviso">Este plan se generó antes de elegir días de la semana. Crea uno nuevo para verlo por día.</div>' : '') + h;
+  c.innerHTML = (p.dias.some(d => !(d.diaSemana >= 0 && d.diaSemana <= 6)) ? '<div class="res-aviso">Este plan se generó antes de elegir días de la semana. Crea uno nuevo para verlo por día.</div>' : '') + h;
 }
 
 function eliminarPlan() {
@@ -2104,17 +2257,17 @@ function eliminarPlan() {
         };
 
         
-        const DIAS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
-        const DIA_CORTO = { LUNES: 'Lun', MARTES: 'Mar', MIERCOLES: 'Mié', JUEVES: 'Jue', VIERNES: 'Vie' };
-        const DIA_LARGO = { LUNES: 'Lunes', MARTES: 'Martes', MIERCOLES: 'Miércoles', JUEVES: 'Jueves', VIERNES: 'Viernes' };
+        const DIAS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
+        const DIA_CORTO = { LUNES: 'Lun', MARTES: 'Mar', MIERCOLES: 'Mié', JUEVES: 'Jue', VIERNES: 'Vie', SABADO: 'Sáb', DOMINGO: 'Dom' };
+        const DIA_LARGO = { LUNES: 'Lunes', MARTES: 'Martes', MIERCOLES: 'Miércoles', JUEVES: 'Jueves', VIERNES: 'Viernes', SABADO: 'Sábado', DOMINGO: 'Domingo' };
         const ICONO = { cris: '😼', fafis: '🐰' };
         const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const reducido = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const $ = id => document.getElementById(id);
 
         function diaDeHoy() {
-            const d = new Date().getDay();
-            return d >= 1 && d <= 5 ? DIAS[d - 1] : 'LUNES';
+            // getDay(): 0 = domingo … 6 = sábado; DIAS empieza en lunes
+            return DIAS[(new Date().getDay() + 6) % 7];
         }
         const HOY = diaDeHoy();
 
@@ -2478,7 +2631,12 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
 
         function rutinaBase(p) {
             const pl = planes[p];
-            if (!pl || !pl.activo || !Array.isArray(pl.dias)) return RUTINAS[p];
+            if (!pl || !pl.activo || !Array.isArray(pl.dias)) {
+                // La rutina fija solo cubre lunes a viernes: sábado y domingo son de descanso
+                const fija = { ...RUTINAS[p] };
+                DIAS.forEach(d => { if (!fija[d]) fija[d] = { titulo: 'Descanso', duracion: '', ejercicios: [] }; });
+                return fija;
+            }
             const out = {};
             DIAS.forEach(d => { out[d] = { titulo: 'Descanso', duracion: '', ejercicios: [] }; });
             pl.dias.forEach(dia => {
@@ -2519,7 +2677,7 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
                 let wd = DIAS.indexOf(clave);
                 if (wd < 0 && planes[p] && clave && clave[0] === 'P') {
                     const dia = (planes[p].dias || []).find(x => x.clave === clave.slice(1));
-                    if (dia && dia.diaSemana >= 0 && dia.diaSemana <= 4) wd = dia.diaSemana;
+                    if (dia && dia.diaSemana >= 0 && dia.diaSemana <= 6) wd = dia.diaSemana;
                 }
                 if (wd < 0) return;
                 const c = completados[id];
@@ -2776,9 +2934,18 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
         // Monograma del encabezado de Acerca de: copia el de la barra superior (sin repetir el trazado)
         document.querySelectorAll('.acerca-marca').forEach(el => el.append(document.querySelector('.marca svg').cloneNode(true)));
 
+        // El botón de biblioteca vuelve a su texto normal cuando se abre otra vista
+        function cerrarBotonBiblioteca() {
+            const b = $('btnLib');
+            b.setAttribute('aria-pressed', 'false');
+            $('btnLibTxt').textContent = 'Biblioteca';
+            b.setAttribute('aria-label', 'Abrir biblioteca de ejercicios');
+        }
+
         function irVista(v, alEntrar) {
             if (document.body.dataset.vista === v) delete document.body.dataset.vista;
             else { document.body.dataset.vista = v; if (alEntrar) alEntrar(); }
+            if (v !== 'biblioteca') cerrarBotonBiblioteca();
             window.scrollTo({ top: 0, behavior: reducido() ? 'auto' : 'smooth' });
         }
 
@@ -2939,7 +3106,7 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
         }
         function toggleProgreso() {
             if (document.body.dataset.vista === 'progreso') delete document.body.dataset.vista;
-            else { document.body.dataset.vista = 'progreso'; renderProgreso(); }
+            else { document.body.dataset.vista = 'progreso'; renderProgreso(); cerrarBotonBiblioteca(); }
             window.scrollTo({ top: 0, behavior: reducido() ? 'auto' : 'smooth' });
         }
         function guardarAutoDescanso(on) { localStorage.setItem('autoDescanso', on ? '1' : '0'); }
