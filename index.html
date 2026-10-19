@@ -426,7 +426,10 @@ dialog button:hover{filter:brightness(1.08)}dialog button:active{transform:scale
         .lib-quitar{display:grid;gap:8px}
         .bottomnav{touch-action:pan-y;overscroll-behavior:contain;overflow:hidden}
         html,body{overscroll-behavior-x:none}
-        @media(max-width:767px){.up-btn{bottom:calc(110px + env(safe-area-inset-bottom))}}
+        @media(max-width:767px){.up-btn{bottom:calc(var(--bn-top,0px) + 12px)}}
+        .dia-acciones{display:flex;flex-direction:column;gap:8px;flex:none}
+        .dia-acciones .tool{white-space:nowrap}
+        @media(max-width:520px){.dia-top{flex-wrap:wrap}.dia-acciones{flex-direction:row;width:100%;order:3}.dia-acciones .tool{flex:1;justify-content:center;padding:0 8px}}
         .res-acciones{display:grid;grid-template-columns:1fr;gap:8px;margin:4px 0 12px}
         .res-acciones .tool{width:100%;justify-content:center;white-space:normal;text-align:center}
         @media(min-width:520px){.res-acciones{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -2075,7 +2078,7 @@ function eliminarPlan() {
                 nombre: 'Cris',
                 subtitulo: 'Hipertrofia • Ectomorfo intermedio',
                 badges: ['5 días/semana', 'Intermedio', 'Ganar masa'],
-                consejosTitulo: '<svg class="ic" aria-hidden="true"><use href="#i-clipboard-list"/></svg> Consejos para Ectomorfos',
+                consejosTitulo: 'Consejos para Ectomorfos',
                 consejos: [
                     ['Nutrición', 'Come en superávit calórico (300-500 cal extra)'],
                     ['Proteína', '1.6-2.2g/kg de peso corporal'],
@@ -2088,7 +2091,7 @@ function eliminarPlan() {
                 nombre: 'Fafis',
                 subtitulo: 'Principiante • Piernas y glúteos con tren superior equilibrado',
                 badges: ['5 días/semana', 'Principiante', 'Glúteo y pierna'],
-                consejosTitulo: '<svg class="ic" aria-hidden="true"><use href="#i-clipboard-list"/></svg> Consejos para tu primer mes y más',
+                consejosTitulo: 'Consejos para tu primer mes y más',
                 consejos: [
                     ['Calentamiento', '5-10 min de cardio suave y 1 serie ligera del primer ejercicio'],
                     ['Peso', 'Elige uno con el que termines cada serie con 2-3 repeticiones en reserva'],
@@ -2446,7 +2449,10 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
                             <p><svg class="ic" aria-hidden="true"><use href="#i-timer"/></svg> ${dia.duracion}</p>
                         </div>
                         <div class="ring" role="progressbar" aria-label="Progreso del día" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${hechos}"><svg viewBox="0 0 104 104" aria-hidden="true"><circle class="track" cx="52" cy="52" r="46" stroke-width="10"/><circle class="val" cx="52" cy="52" r="46" stroke-width="10" stroke-dasharray="289.03" stroke-dashoffset="289.03" data-off="${(289.03 * (1 - pct / 100)).toFixed(2)}"/></svg><span>${pct}%</span></div>
-                        <button class="tool rip" id="btnExpand" onclick="toggleTodos()"></button>
+                        <div class="dia-acciones">
+                            <button class="tool rip" id="btnExpand" onclick="toggleTodos()"></button>
+                            <button class="tool rip" id="btnDesmarcar" onclick="desmarcarDia()"><svg class="ic" aria-hidden="true"><use href="#i-undo-2"/></svg> Desmarcar hechos</button>
+                        </div>
                     </div>
                     <div class="prog-row"><span><strong>${hechos} de ${total}</strong> ejercicios hechos</span><span class="prog-pct">${pct}%</span></div>
                     ${hechos === total && total ? '<div class="dia-ok"><svg class="ic" aria-hidden="true"><use href="#i-party-popper"/></svg> ¡Día completo!</div>' : ''}
@@ -2718,6 +2724,21 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
             refrescar(id);
         }
 
+        // Desmarca los ejercicios hechos del día que se ve; lo hecho se archiva en el historial
+        function desmarcarDia() {
+            const dia = rutinaDe(perfil)[diaSeleccionado];
+            const ids = dia.ejercicios.map((ej, i) => idDe(perfil, diaSeleccionado, ej, i)).filter(id => completados[id]);
+            if (!ids.length) { avisar('No hay ejercicios marcados como hechos en este día.'); return; }
+            ids.forEach(id => {
+                historial[id] = (historial[id] || []).concat(completados[id]).slice(-20);
+                delete completados[id];
+            });
+            localStorage.setItem('historial', JSON.stringify(historial));
+            localStorage.setItem('completados', JSON.stringify(completados));
+            renderContent();
+            avisar(`Se desmarcaron ${ids.length} ejercicios de este día.`);
+        }
+
         function refrescar(id) {
             const y = window.scrollY;
             const r = REG[id];
@@ -2766,6 +2787,15 @@ const CATALOGO = [["abdominales","Crunch con Flexión de Rodillas","abdominales/
             const f = () => b.classList.toggle('show', window.scrollY > 500);
             window.addEventListener('scroll', f, { passive: true });
             f();
+            // La flecha se coloca encima de la barra de días, sea cual sea su altura
+            ajustarFlecha();
+            window.addEventListener('resize', ajustarFlecha);
+            if (window.ResizeObserver) new ResizeObserver(ajustarFlecha).observe($('bottomTabs'));
+        }
+
+        function ajustarFlecha() {
+            const r = $('bottomTabs').getBoundingClientRect();
+            document.documentElement.style.setProperty('--bn-top', (r.height ? window.innerHeight - r.top : 0) + 'px');
         }
 
         function volverArriba() {
